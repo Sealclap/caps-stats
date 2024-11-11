@@ -3,22 +3,29 @@ import pandas as pd
 
 conn = None
 c = None
+active_db = None
 
 
 class FileTypeError(Exception):
-    def __init__(self, types: list[str]):
+    def __init__(self, types: list[str]) -> None:
         self.message = "Invalid file type. Accepted file types are: " + \
             ",".join(types)
         super().__init__(self.message)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"FileTypeError: {self.message}"
+
+
+def change_active_db(db_path: str) -> None:
+    global active_db
+    active_db = db_path
 
 
 def connect_to_db(func):
     def wrap(*args, **kwargs):
         global conn, c
-        conn = sq.connect("data/capitals.db")
+        change_active_db(args[-1])
+        conn = sq.connect(active_db)
         c = conn.cursor()
         result = func(*args, **kwargs)
         conn.close()
@@ -28,21 +35,26 @@ def connect_to_db(func):
 
 
 @connect_to_db
-def create_tables():
-    c.execute("""CREATE TABLE IF NOT EXISTS roster
-          (jersey integer primary key,
-          name text,
-          position text,
-          shoots_catches text,
-          height text,
-          weight integer,
-          bday text,
-          bplace text)""")
+def create_table(table_name: str, columns: list[str] | dict[str, str], db_path: str = "data/capitals.db") -> bool:
+    try:
+        if isinstance(columns, dict):
+            to_list = [f"{k} {v}" for k, v in columns.items()]
+            c.execute(f"CREATE TABLE IF NOT EXISTS {
+                      table_name} ({", ".join(to_list)})")
+        elif isinstance(columns, list):
+            c.execute(f"CREATE TABLE IF NOT EXISTS {
+                      table_name} ({", ".join(columns)})")
+        else:
+            raise TypeError("Columns must be of type 'dict' or 'list'")
+        return True
+    except TypeError as e:
+        print(e)
+        return False
 
 
 # GET functions
 @connect_to_db
-def fetch_one(table_name: str, criteria: str) -> tuple | None:
+def fetch_one(table_name: str, criteria: str, db_path: str = "data/capitals.db") -> tuple | None:
     try:
         table_name = table_name.lower()
         c.execute(f"SELECT * FROM {table_name} WHERE {criteria}")
@@ -53,7 +65,7 @@ def fetch_one(table_name: str, criteria: str) -> tuple | None:
 
 
 @connect_to_db
-def fetch_many(table_name: str, criteria: str, num_rows: int) -> list[tuple] | None:
+def fetch_many(table_name: str, criteria: str, num_rows: int, db_path: str = "data/capitals.db") -> list[tuple] | None:
     try:
         table_name = table_name.lower()
         c.execute(f"SELECT * FROM {table_name} WHERE {criteria}")
@@ -64,7 +76,7 @@ def fetch_many(table_name: str, criteria: str, num_rows: int) -> list[tuple] | N
 
 
 @connect_to_db
-def fetch_all(table_name: str) -> list[tuple] | None:
+def fetch_all(table_name: str, db_path: str = "data/capitals.db") -> list[tuple] | None:
     try:
         table_name = table_name.lower()
         c.execute(f"SELECT * FROM {table_name}")
@@ -76,7 +88,7 @@ def fetch_all(table_name: str) -> list[tuple] | None:
 
 # INSERT functions
 @connect_to_db
-def insert_row(table_name: str, row_data: tuple) -> bool:
+def insert_row(table_name: str, row_data: tuple, db_path: str = "data/capitals.db") -> bool:
     try:
         table_name = table_name.lower()
         c.execute(f"INSERT INTO {table_name} VALUES {row_data}")
@@ -91,7 +103,7 @@ def insert_row(table_name: str, row_data: tuple) -> bool:
 
 
 @connect_to_db
-def insert_rows(table_name: str, num_columns: int, rows_data: list[tuple]) -> bool:
+def insert_rows(table_name: str, num_columns: int, rows_data: list[tuple], db_path: str = "data/capitals.db") -> bool:
     try:
         table_name = table_name.lower()
         qmarks = ['?' for _ in range(num_columns)]
@@ -109,7 +121,7 @@ def insert_rows(table_name: str, num_columns: int, rows_data: list[tuple]) -> bo
 
 # UPDATE functions
 @connect_to_db
-def update_row(table_name: str, criteria: str, updates: dict[str, str | int | float]) -> bool:
+def update_row(table_name: str, criteria: str, updates: dict[str, str | int | float], db_path: str = "data/capitals.db") -> bool:
     try:
         table_name = table_name.lower()
         updates_list = []
@@ -129,7 +141,7 @@ def update_row(table_name: str, criteria: str, updates: dict[str, str | int | fl
 
 # DELETE function
 @connect_to_db
-def delete_row(table_name: str, criteria: dict[str, str]) -> bool:
+def delete_row(table_name: str, criteria: dict[str, str], db_path: str = "data/capitals.db") -> bool:
     try:
         table_name = table_name.lower()
         if "and" not in criteria.keys() and "or" not in criteria.keys():
@@ -150,7 +162,7 @@ def delete_row(table_name: str, criteria: dict[str, str]) -> bool:
 
 
 # LOAD functions
-def datetime_to_string(serial_date: pd.Timestamp) -> str:
+def datetime_to_string(serial_date: pd.Timestamp, db_path: str = "data/capitals.db") -> str:
     year = serial_date.year
     month = serial_date.month_name()
     day = serial_date.day
@@ -158,7 +170,7 @@ def datetime_to_string(serial_date: pd.Timestamp) -> str:
 
 
 @connect_to_db
-def load_file(filepath: str, filename: str, table_name: str, drop_columns: list[str], db_path: str = "data/stats_2425.db", write_type: str = "replace") -> None:
+def load_file(filepath: str, filename: str, table_name: str, drop_columns: list[str], write_type: str = "replace", db_path: str = "data/capitals.db") -> None:
     # format full filename
     if filepath[-1] in ("/", "\\"):
         file_to_load = f"{filepath}{filename}"
@@ -203,9 +215,6 @@ def load_file(filepath: str, filename: str, table_name: str, drop_columns: list[
     if write_type not in ("fail", "replace", "append"):
         write_type = "replace"
     df.to_sql(table_name, conn, if_exists=write_type, index=False)
-
-
-# create_tables()
 
 
 if __name__ == '__main__':
