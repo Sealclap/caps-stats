@@ -1,7 +1,18 @@
 import sqlite3 as sq
+import pandas as pd
 
 conn = None
 c = None
+
+
+class FileTypeError(Exception):
+    def __init__(self, types: list[str]):
+        self.message = "Invalid file type. Accepted file types are: " + \
+            ",".join(types)
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"FileTypeError: {self.message}"
 
 
 def connect_to_db(func):
@@ -138,7 +149,64 @@ def delete_row(table_name: str, criteria: dict[str, str]) -> bool:
         return False
 
 
-create_tables()
+# LOAD functions
+def datetime_to_string(serial_date: pd.Timestamp) -> str:
+    year = serial_date.year
+    month = serial_date.month_name()
+    day = serial_date.day
+    return f"{month[:3]} {day}, {year}"
+
+
+@connect_to_db
+def load_file(filepath: str, filename: str, table_name: str, drop_columns: list[str], db_path: str = "data/stats_2425.db", write_type: str = "replace") -> None:
+    # format full filename
+    if filepath[-1] in ("/", "\\"):
+        file_to_load = f"{filepath}{filename}"
+    else:
+        file_to_load = f"{filepath}/{filename}"
+
+    # read the file
+    try:
+        if filename.endswith(".xlsx"):
+            df = pd.read_excel(file_to_load)
+        elif filename.endswith(".csv"):
+            df = pd.read_csv(file_to_load)
+        else:
+            raise FileTypeError([".xlsx", ".csv"])
+    except FileTypeError as e:
+        print(e)
+        return
+    except Exception as e:
+        print(e)
+        return
+
+    # drop columns
+    if len(drop_columns) >= 1:
+        df.drop(columns=drop_columns, inplace=True)
+
+    # Convert date stamps to strings
+    if "Born" in df.columns:
+        bdays = []
+        for bday in df["Born"]:
+            bdays.append(datetime_to_string(bday))
+        df["Born"] = pd.Series(bdays)
+
+    # Convert punctuation in height column (' -> ft, " -> in)
+    if "Ht" in df.columns:
+        hts = []
+        for ht in df["Ht"]:
+            new_ht = ht.replace("'", "ft ").replace("\"", "in")
+            hts.append(new_ht)
+        df["Ht"] = pd.Series(hts)
+
+    # write to db
+    if write_type not in ("fail", "replace", "append"):
+        write_type = "replace"
+    df.to_sql(table_name, conn, if_exists=write_type, index=False)
+
+
+# create_tables()
+
 
 if __name__ == '__main__':
     ...
