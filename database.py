@@ -2,7 +2,6 @@
 
 import sqlite3 as sq
 import pandas as pd
-import os
 
 conn = None
 c = None
