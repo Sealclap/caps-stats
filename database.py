@@ -351,4 +351,4 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
 
 
 if __name__ == '__main__':
-    drop_table("Poop")
+    ...
