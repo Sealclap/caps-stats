@@ -3,9 +3,9 @@
 import sqlite3 as sq
 import pandas as pd
 
-conn = None
-c = None
-active_db = None
+conn: sq.Connection | None = None
+c: sq.Cursor | None = None
+active_db: str | None = None
 
 
 class FileTypeError(Exception):
