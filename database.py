@@ -335,14 +335,6 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
             bdays.append(datetime_to_string(bday))
         df["Born"] = pd.Series(bdays)
 
-    # Convert punctuation in height column (' -> ft, " -> in)
-    if "Ht" in df.columns:
-        hts = []
-        for ht in df["Ht"]:
-            new_ht = ht.replace("'", "ft ").replace("\"", "in")
-            hts.append(new_ht)
-        df["Ht"] = pd.Series(hts)
-
     # write to db
     if write_type not in ("fail", "replace", "append"):
         write_type = "replace"
