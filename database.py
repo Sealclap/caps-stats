@@ -324,6 +324,14 @@ def update_datestr_column(df: pd.DataFrame, col_name: str) -> pd.Series:
 
 
 def update_date_column(df: pd.DataFrame) -> pd.Series:
+    """Converts datetime to date
+
+    Args:
+        df (pd.DataFrame): the dataframe to update
+
+    Returns:
+        pd.Series: list of new column values to be added to dataframe
+    """
     new_vals = []
     for dt in df["Date"]:
         new_vals.append(dt.date())
@@ -385,5 +393,4 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
 
 
 if __name__ == '__main__':
-    load_file("to_load/schedule_2425.xlsx", "schedule",
-              [], "replace", "data/schedule.db")
+    ...
