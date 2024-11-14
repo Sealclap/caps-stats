@@ -280,7 +280,7 @@ def drop_table(table_name: str, db_path: str = "data/capitals.db") -> bool:
 
 
 # LOAD functions
-def datetime_to_string(serial_date: pd.Timestamp) -> str:
+def date_to_string(serial_date: pd.Timestamp) -> str:
     """Used for converting player birthdays from `timestamp` to formatted string
 
     Args:
@@ -293,6 +293,34 @@ def datetime_to_string(serial_date: pd.Timestamp) -> str:
     month = serial_date.month_name()
     day = serial_date.day
     return f"{month[:3]} {day}, {year}"
+
+
+def time_to_string(serial_date: pd.Timestamp) -> str:
+    """Used for converting schedule start times from `timestamp` to formatted string
+
+    Args:
+        serial_date (pd.Timestamp): timestamp to be converted
+
+    Returns:
+        str: returns time in `HH:MM AM/PM` formatted string
+    """
+    return serial_date.strftime("%I:%M %p")
+
+
+def update_date_column(df: pd.DataFrame, col_name: str) -> pd.Series:
+    """Updates a column containing dates
+
+    Args:
+        df (pd.DataFrame): the dataframe to update
+        col_name (str): the name of the column to update
+
+    Returns:
+        pd.Series: list of new column values to be added to dataframe
+    """
+    new_vals = []
+    for bday in df[col_name]:
+        new_vals.append(date_to_string(bday))
+    return pd.Series(new_vals)
 
 
 @connect_to_db
@@ -330,10 +358,17 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
 
     # Convert date stamps to strings
     if "Born" in df.columns:
-        bdays = []
-        for bday in df["Born"]:
-            bdays.append(datetime_to_string(bday))
-        df["Born"] = pd.Series(bdays)
+        df["Born"] = update_date_column(df, "Born")
+
+    if "Date" in df.columns:
+        df["Date"] = update_date_column(df, "Date")
+
+    # Convert time stamps to strings
+    if "Start_Time" in df.columns:
+        times = []
+        for time in df["Start_Time"]:
+            times.append(time_to_string(time))
+        df["Start_Time"] = pd.Series(times)
 
     # write to db
     if write_type not in ("fail", "replace", "append"):
@@ -342,4 +377,5 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
 
 
 if __name__ == '__main__':
-    ...
+    load_file("to_load/schedule_2425.xlsx", "schedule",
+              [], "replace", "data/schedule.db")
