@@ -307,7 +307,7 @@ def time_to_string(serial_date: pd.Timestamp) -> str:
     return serial_date.strftime("%I:%M %p")
 
 
-def update_date_column(df: pd.DataFrame, col_name: str) -> pd.Series:
+def update_datestr_column(df: pd.DataFrame, col_name: str) -> pd.Series:
     """Updates a column containing dates
 
     Args:
@@ -318,9 +318,16 @@ def update_date_column(df: pd.DataFrame, col_name: str) -> pd.Series:
         pd.Series: list of new column values to be added to dataframe
     """
     new_vals = []
-    for bday in df[col_name]:
-        new_vals.append(date_to_string(bday))
+    for date in df[col_name]:
+        new_vals.append(date_to_string(date))
     return pd.Series(new_vals)
+
+
+def update_date_column(df: pd.DataFrame) -> pd.Series:
+    new_vals = []
+    for dt in df["Date"]:
+        new_vals.append(dt.date())
+    return new_vals
 
 
 @connect_to_db
@@ -358,10 +365,11 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
 
     # Convert date stamps to strings
     if "Born" in df.columns:
-        df["Born"] = update_date_column(df, "Born")
+        df["Born"] = update_datestr_column(df, "Born")
 
     if "Date" in df.columns:
-        df["Date"] = update_date_column(df, "Date")
+        df["Date_Str"] = update_datestr_column(df, "Date")
+        df["Date"] = update_date_column(df)
 
     # Convert time stamps to strings
     if "Start_Time" in df.columns:
