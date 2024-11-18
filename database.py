@@ -2,6 +2,8 @@
 
 import sqlite3 as sq
 import pandas as pd
+import requests as r
+import os
 
 conn: sq.Connection | None = None
 c: sq.Cursor | None = None
@@ -281,13 +283,13 @@ def drop_table(table_name: str, db_path: str = "data/capitals.db") -> bool:
 
 # LOAD functions
 def date_to_string(serial_date: pd.Timestamp) -> str:
-    """Used for converting player birthdays from `timestamp` to formatted string
+    """Used for converting from `timestamp` to formatted string
 
     Args:
         serial_date (pd.Timestamp): timestamp to be converted
 
     Returns:
-        str: returns date in `mmm dd, yyyy` formatted string
+        str: returns date in `Mmm dd, yyyy` formatted string
     """
     year = serial_date.year
     month = serial_date.month_name()
@@ -305,6 +307,23 @@ def time_to_string(serial_date: pd.Timestamp) -> str:
         str: returns time in `HH:MM AM/PM` formatted string
     """
     return serial_date.strftime("%I:%M %p")
+
+
+def reformat_date(date: str) -> str:
+    """Used to convert from API date format to table format\n
+    Calls `date_to_string()`
+
+    Args:
+        date (str): yyyy-mm-dd format
+
+    Returns:
+        str: Mmm dd, yyyy format
+    """
+    year = int(date[:4])
+    month = int(date[5:7])
+    day = int(date[8:])
+    timestamp = pd.Timestamp(year=year, month=month, day=day)
+    return date_to_string(timestamp)
 
 
 def update_datestr_column(df: pd.DataFrame, col_name: str) -> pd.Series:
@@ -390,6 +409,180 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
     if write_type not in ("fail", "replace", "append"):
         write_type = "replace"
     df.to_sql(table_name, conn, if_exists=write_type, index=False)
+
+
+# Pull data from NHL API
+team_api: str = "https://api-web.nhle.com/v1/club-stats/WSH/now"
+player_api_head: str = "https://api-web.nhle.com/v1/player/"
+player_api_tail: str = "/landing"
+
+
+def pull_roster() -> None:
+    """Pulls the current Roster from the NHL API and saves to .csv file
+    """
+    team = r.get(team_api).json()
+    skaters = team["skaters"]
+    goalies = team["goalies"]
+    roster_data = []
+
+    for sk in skaters:
+        data = r.get(f"{player_api_head}{sk["playerId"]}{
+                     player_api_tail}").json()
+        player_id = data["playerId"]
+        name = f"{data["firstName"]["default"]} {data["lastName"]["default"]}"
+        jersey = data["sweaterNumber"]
+        s_c = data["shootsCatches"]
+        pos = data["position"]
+        headshot = data["headshot"]
+        height_in_inches = data["heightInInches"]
+        height_in_feet = height_in_inches // 12
+        height_str = f"{height_in_feet}'{
+            height_in_inches-(height_in_feet*12)}\""
+        weight = data["weightInPounds"]
+        birth_date = reformat_date(data["birthDate"])
+        if "birthStateProvince" in data:
+            birthplace = f"{data["birthCity"]["default"]}, {
+                data["birthStateProvince"]["default"]}, {data["birthCountry"]}"
+        else:
+            birthplace = f"{data["birthCity"]["default"]}, {
+                data["birthCountry"]}"
+
+        roster_data.append((player_id, headshot, name, jersey,
+                            s_c, pos, height_str, weight, birth_date, birthplace))
+
+    for go in goalies:
+        data = r.get(f"{player_api_head}{go["playerId"]}{
+                     player_api_tail}").json()
+        player_id = data["playerId"]
+        name = f"{data["firstName"]["default"]} {data["lastName"]["default"]}"
+        headshot = data["headshot"]
+        jersey = data["sweaterNumber"]
+        s_c = data["shootsCatches"]
+        pos = data["position"]
+        height_in_inches = data["heightInInches"]
+        height_in_feet = height_in_inches // 12
+        height_str = f"{height_in_feet}'{
+            height_in_inches-(height_in_feet*12)}\""
+        weight = data["weightInPounds"]
+        birth_date = reformat_date(data["birthDate"])
+        if "birthStateProvince" in data:
+            birthplace = f"{data["birthCity"]["default"]}, {
+                data["birthStateProvince"]["default"]}, {data["birthCountry"]}"
+        else:
+            birthplace = f"{data["birthCity"]["default"]}, {
+                data["birthCountry"]}"
+
+        roster_data.append((player_id, headshot, name, jersey,
+                            s_c, pos, height_str, weight, birth_date, birthplace))
+
+    roster_cols = ["player_id", "headshot", "name", "jersey", "s/c", "pos", "ht", "wt",
+                   "born", "birthplace"]
+    roster_df = pd.DataFrame(roster_data, columns=roster_cols)
+    roster_df.to_csv("to_load/roster_from_api.csv", index=False)
+
+
+def pull_skaters() -> None:
+    """Pulls all Washington Skaters stats from the NHL API and saves to .csv file
+    """
+    team = r.get(team_api).json()
+    skaters = team["skaters"]
+    skater_data = []
+    for sk in skaters:
+        data = r.get(f"{player_api_head}{sk["playerId"]}{
+                     player_api_tail}").json()
+        player_id = data["playerId"]
+        name = f"{data["firstName"]["default"]} {data["lastName"]["default"]}"
+        jersey = data["sweaterNumber"]
+        s_c = data["shootsCatches"]
+        pos = data["position"]
+        gp = data["featuredStats"]["regularSeason"]["subSeason"]["gamesPlayed"]
+        goals = data["featuredStats"]["regularSeason"]["subSeason"]["goals"]
+        assists = data["featuredStats"]["regularSeason"]["subSeason"]["assists"]
+        points = data["featuredStats"]["regularSeason"]["subSeason"]["points"]
+        plus_minus = data["featuredStats"]["regularSeason"]["subSeason"]["plusMinus"]
+        pim = data["featuredStats"]["regularSeason"]["subSeason"]["pim"]
+        pts_per_game = "{:.2f}".format(round(points/gp, 2))
+        ppg = data["featuredStats"]["regularSeason"]["subSeason"]["powerPlayGoals"]
+        ppp = data["featuredStats"]["regularSeason"]["subSeason"]["powerPlayPoints"]
+        shg = data["featuredStats"]["regularSeason"]["subSeason"]["shorthandedGoals"]
+        shp = data["featuredStats"]["regularSeason"]["subSeason"]["shorthandedPoints"]
+        evg = goals - (ppg + shg)
+        evp = points - (ppp + shp)
+        otg = data["featuredStats"]["regularSeason"]["subSeason"]["otGoals"]
+        gwg = data["featuredStats"]["regularSeason"]["subSeason"]["gameWinningGoals"]
+        shots = data["featuredStats"]["regularSeason"]["subSeason"]["shots"]
+        shot_p = data["featuredStats"]["regularSeason"]["subSeason"]["shootingPctg"]
+        shot_p = "{:.1f}".format(round(shot_p*100, 1))
+        fow = "{:.1f}".format(round(sk["faceoffWinPctg"]*100, 1))
+        toipg_in_secs = sk["avgTimeOnIcePerGame"]
+        toipg_mins = int(toipg_in_secs // 60)
+        toipg_secs = int(toipg_in_secs - (toipg_mins * 60))
+        toipg = f"{toipg_mins}:{toipg_secs:02}"
+        headshot = data["headshot"]
+
+        skater_data.append((player_id, headshot, name, jersey, s_c, pos, gp, goals, assists, points,
+                            plus_minus, pim, pts_per_game, evg, evp, ppg, ppp, shg, shp, otg, gwg, shots, shot_p, toipg, fow))
+
+    skater_cols = ["player_id", "headshot", "name", "jersey", "s/c", "pos", "gp", "g",
+                   "a", "p", "+/-", "pim", "p/gp", "evg", "evp", "ppg", "ppp",
+                   "shg", "shp", "otg", "gwg", "s", "s%", "toi/gp", "fow%"]
+    skater_df = pd.DataFrame(skater_data, columns=skater_cols)
+    skater_df.to_csv("to_load/skaters_from_api.csv", index=False)
+
+
+def pull_goalies() -> None:
+    """Pulls all Washington Goalies stats from the NHL API and saves to .csv file
+    """
+    team = r.get(team_api).json()
+    goalies = team["goalies"]
+
+    goalie_data = []
+    for go in goalies:
+        data = r.get(f"{player_api_head}{go["playerId"]}{
+                     player_api_tail}").json()
+        player_id = data["playerId"]
+        name = f"{data["firstName"]["default"]} {data["lastName"]["default"]}"
+        headshot = data["headshot"]
+        jersey = data["sweaterNumber"]
+        s_c = data["shootsCatches"]
+        gp = data["featuredStats"]["regularSeason"]["subSeason"]["gamesPlayed"]
+        gs = go["gamesStarted"]
+        wins = data["featuredStats"]["regularSeason"]["subSeason"]["wins"]
+        losses = data["featuredStats"]["regularSeason"]["subSeason"]["losses"]
+        ot_losses = data["featuredStats"]["regularSeason"]["subSeason"]["otLosses"]
+        sa = go["shotsAgainst"]
+        svs = go["saves"]
+        ga = go["goalsAgainst"]
+        svp = "{:.3f}".format(
+            round(data["featuredStats"]["regularSeason"]["subSeason"]["savePctg"], 3))
+        gaa = "{:.2f}".format(
+            round(data["featuredStats"]["regularSeason"]["subSeason"]["goalsAgainstAvg"], 2))
+        toi_in_secs = go["timeOnIce"]
+        toi_mins = toi_in_secs // 60
+        toi_secs = toi_in_secs - (toi_mins * 60)
+        toi = f"{toi_mins}:{toi_secs}"
+        so = go["shutouts"]
+        goals = go["goals"]
+        assists = go["assists"]
+        points = go["points"]
+        pim = go["penaltyMinutes"]
+
+        goalie_data.append((player_id, headshot, name, jersey, s_c, gp, gs, wins,
+                            losses, ot_losses, sa, svs, ga, svp, gaa, toi, so, goals, assists, points, pim))
+
+    goalie_cols = ["player_id", "headshot", "name", "jersey", "s/c", "gp", "gs", "w",
+                   "l", "otl", "sa", "svs", "ga", "sv%", "gaa", "toi", "so", "g", "a",
+                   "p", "pim"]
+    goalie_df = pd.DataFrame(goalie_data, columns=goalie_cols)
+    goalie_df.to_csv("to_load/goalies_from_api.csv", index=False)
+
+
+def pull_all_data() -> None:
+    """Pulls goalie, skater, and roster data from the NHL API and saves to .csv files
+    """
+    pull_roster()
+    pull_skaters()
+    pull_goalies()
 
 
 if __name__ == '__main__':
