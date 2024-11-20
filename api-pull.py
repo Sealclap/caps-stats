@@ -1,6 +1,6 @@
 import requests as r
 import pandas as pd
-from database import reformat_date
+import database as d
 
 roster_api: str = "https://api-web.nhle.com/v1/club-stats/WSH/now"
 player_api_head: str = "https://api-web.nhle.com/v1/player/"
@@ -35,7 +35,7 @@ def pull_roster() -> None:
         height_str = f"{height_in_feet}'{
             height_in_inches-(height_in_feet*12)}\""
         weight = data["weightInPounds"]
-        birth_date = reformat_date(data["birthDate"])
+        birth_date = d.reformat_date(data["birthDate"])
         if "birthStateProvince" in data:
             birthplace = f"{data["birthCity"]["default"]}, {
                 data["birthStateProvince"]["default"]}, {data["birthCountry"]}"
@@ -60,7 +60,7 @@ def pull_roster() -> None:
         height_str = f"{height_in_feet}'{
             height_in_inches-(height_in_feet*12)}\""
         weight = data["weightInPounds"]
-        birth_date = reformat_date(data["birthDate"])
+        birth_date = d.reformat_date(data["birthDate"])
         if "birthStateProvince" in data:
             birthplace = f"{data["birthCity"]["default"]}, {
                 data["birthStateProvince"]["default"]}, {data["birthCountry"]}"
@@ -181,6 +181,24 @@ def pull_all_player_data() -> None:
     pull_goalies()
 
 
+def bulk_update(db_path: str) -> None:
+    """Updates all tables using the NHL API except `games` and `seasons`
+
+    Args:
+        db_path (str): path to desired db (ex. 'data/stats_2425.db')
+    """
+    pull_all_player_data()
+    pull_current_schedule()
+    d.load_file("to_load/skaters_from_api.csv",
+                "skaters", [], "replace", db_path)
+    d.load_file("to_load/goalies_from_api.csv",
+                "goalies", [], "replace", db_path)
+    d.load_file("to_load/roster_from_api.csv", "roster",
+                [], "replace", db_path)
+    d.load_file("to_load/schedule_from_api.csv",
+                "schedule", [], "replace", db_path)
+
+
 def pull_game_by_id(game_id: str | int) -> None:
     data = r.get(f"{landing_api_head}{game_id}{landing_api_tail}").json()
 
@@ -291,6 +309,14 @@ def pull_game_by_id(game_id: str | int) -> None:
 
     opponent = f"{opponent_data["placeName"]["default"]} {
         opponent_data["name"]["default"]}"
+    # Used to fix "Utah Utah Hockey Club" error from API
+    new_opponent = []
+    for word in opponent.split():
+        if word in new_opponent:
+            continue
+        new_opponent.append(word)
+    opponent = " ".join(new_opponent)
+
     opp_score = opponent_data["score"]
     opp_sog = opponent_data["sog"]
     opp_fop = round(away_stats["faceoffWinningPctg"]*100,
@@ -401,4 +427,6 @@ def pull_current_schedule() -> None:
 
 
 if __name__ == '__main__':
-    pull_current_schedule()
+    pull_game_by_date("2024-11-18")
+    d.load_file("to_load/game_2024-11-18.csv", "games",
+                [], "append", "data/stats_2425.db")

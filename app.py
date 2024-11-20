@@ -1,107 +1,199 @@
-import PySimpleGUI as psg
+import sys
+from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtWidgets import (
+    QApplication, QHBoxLayout, QMainWindow, QLabel, QPushButton,
+    QVBoxLayout, QWidget)
 import database as d
 
-psg.set_options(font=("Arial Bold", 16))
+CAPS_ICON = "assets/caps_icon.ico"
 
 
-def get_main_window() -> psg.Window:
-    layout = [
-        [psg.Text("Please select a menu")],
-        [psg.Button("Skaters"), psg.Button("Goalies"), psg.Button("Roster")],
-        [psg.Button("Games"), psg.Button("Schedule"), psg.Button("Seasons")],
-        [psg.Button("Exit")]
-    ]
+class MainWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        # Create widgets
+        self.header = QLabel("Please select a menu")
+        self.skaters_button = QPushButton("Skaters")
+        self.goalies_button = QPushButton("Goalies")
+        self.roster_button = QPushButton("Roster")
+        self.games_button = QPushButton("Games")
+        self.schedule_button = QPushButton("Schedule")
+        self.seasons_button = QPushButton("Seasons")
 
-    return psg.Window("Main Menu", layout, finalize=True)
+        # Connect buttons
+        self.skaters_button.clicked.connect(self.show_skater_window)
+        self.goalies_button.clicked.connect(self.show_goalie_window)
+        self.roster_button.clicked.connect(self.show_roster_window)
+        self.games_button.clicked.connect(self.show_game_window)
+        self.schedule_button.clicked.connect(self.show_schedule_window)
+        self.seasons_button.clicked.connect(self.show_seasons_window)
+
+        # Set layout
+        main_layout = QVBoxLayout()
+        btn_row1 = QHBoxLayout()
+        btn_row2 = QHBoxLayout()
+
+        btn_row1.addWidget(self.skaters_button)
+        btn_row1.addWidget(self.goalies_button)
+        btn_row1.addWidget(self.roster_button)
+        btn_row2.addWidget(self.games_button)
+        btn_row2.addWidget(self.schedule_button)
+        btn_row2.addWidget(self.seasons_button)
+
+        main_layout.addWidget(self.header)
+        main_layout.addLayout(btn_row1)
+        main_layout.addLayout(btn_row2)
+
+        self.setWindowTitle("Washington Capitals Stats")
+        self.setWindowIcon(QIcon(CAPS_ICON))
+        self.setLayout(main_layout)
+
+    def show_skater_window(self) -> None:
+        self.skater_window = SkaterWindow()
+        self.skater_window.show()
+        self.hide()
+
+    def show_goalie_window(self) -> None:
+        self.goalie_window = GoalieWindow()
+        self.goalie_window.show()
+        self.hide()
+
+    def show_roster_window(self) -> None:
+        self.roster_window = RosterWindow()
+        self.roster_window.show()
+        self.hide()
+
+    def show_game_window(self) -> None:
+        self.game_window = GameWindow()
+        self.game_window.show()
+        self.hide()
+
+    def show_schedule_window(self) -> None:
+        self.schedule_window = ScheduleWindow()
+        self.schedule_window.show()
+        self.hide()
+
+    def show_seasons_window(self) -> None:
+        self.seasons_window = SeasonsWindow()
+        self.seasons_window.show()
+        self.hide()
 
 
-def get_skaters_window() -> psg.Window:
-    layout = []
+class SkaterWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        # Create widgets
+        self.label = QLabel()
+        self.headshot = QPixmap("assets/headshots/alex_ovechkin.png")
+        self.label.setPixmap(self.headshot.scaledToWidth(200))
+        self.back_btn = QPushButton("Back")
+        self.back_btn.clicked.connect(self.go_back)
 
-    return psg.Window("Skaters", layout, finalize=True)
+        layout = QHBoxLayout()
+        layout.addWidget(self.back_btn)
+        layout.addWidget(self.label)
+        self.setWindowTitle("Washington Capitals Skaters")
+        self.setWindowIcon(QIcon(CAPS_ICON))
+        self.setLayout(layout)
 
-
-def get_goalies_window() -> psg.Window:
-    layout = []
-
-    return psg.Window("Goalies", layout, finalize=True)
-
-
-def get_roster_window() -> psg.Window:
-    layout = []
-
-    return psg.Window("Roster", layout, finalize=True)
-
-
-def get_game_window() -> psg.Window:
-    layout = []
-
-    return psg.Window("Games", layout, finalize=True)
-
-
-def get_schedule_window() -> psg.Window:
-    layout = []
-
-    return psg.Window("Schedule", layout, finalize=True)
+    def go_back(self) -> None:
+        self.close()
+        global w
+        w.show()
 
 
-def get_seasons_window() -> psg.Window:
-    layout = []
+class GoalieWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QHBoxLayout()
+        self.back_btn = QPushButton("Back")
+        self.back_btn.clicked.connect(self.go_back)
+        layout.addWidget(self.back_btn)
 
-    return psg.Window("Season Stats", layout, finalize=True)
+        self.setWindowTitle("Washington Capitals Goalies")
+        self.setWindowIcon(QIcon(CAPS_ICON))
+        self.setLayout(layout)
+
+    def go_back(self) -> None:
+        self.close()
+        global w
+        w.show()
+
+
+class RosterWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QHBoxLayout()
+        self.back_btn = QPushButton("Back")
+        self.back_btn.clicked.connect(self.go_back)
+        layout.addWidget(self.back_btn)
+
+        self.setWindowTitle("Washington Capitals Roster")
+        self.setWindowIcon(QIcon(CAPS_ICON))
+        self.setLayout(layout)
+
+    def go_back(self) -> None:
+        self.close()
+        global w
+        w.show()
+
+
+class GameWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QHBoxLayout()
+        self.back_btn = QPushButton("Back")
+        self.back_btn.clicked.connect(self.go_back)
+        layout.addWidget(self.back_btn)
+
+        self.setWindowTitle("Washington Capitals Games")
+        self.setWindowIcon(QIcon(CAPS_ICON))
+        self.setLayout(layout)
+
+    def go_back(self) -> None:
+        self.close()
+        global w
+        w.show()
+
+
+class ScheduleWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QHBoxLayout()
+        self.back_btn = QPushButton("Back")
+        self.back_btn.clicked.connect(self.go_back)
+        layout.addWidget(self.back_btn)
+
+        self.setWindowTitle("Washington Capitals Schedule")
+        self.setWindowIcon(QIcon(CAPS_ICON))
+        self.setLayout(layout)
+
+    def go_back(self) -> None:
+        self.close()
+        global w
+        w.show()
+
+
+class SeasonsWindow(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QHBoxLayout()
+        self.back_btn = QPushButton("Back")
+        self.back_btn.clicked.connect(self.go_back)
+        layout.addWidget(self.back_btn)
+
+        self.setWindowTitle("Washington Capitals Season Stats")
+        self.setWindowIcon(QIcon(CAPS_ICON))
+        self.setLayout(layout)
+
+    def go_back(self) -> None:
+        self.close()
+        global w
+        w.show()
 
 
 if __name__ == '__main__':
-    main_window: psg.Window | None = get_main_window()
-    skaters_window: psg.Window | None = None
-    goalies_window: psg.Window | None = None
-    roster_window: psg.Window | None = None
-    game_window: psg.Window | None = None
-    schedule_window: psg.Window | None = None
-    seasons_window: psg.Window | None = None
-
-    def close_all_windows() -> None:
-        main_window = None
-        skaters_window = None
-        goalies_window = None
-        roster_window = None
-        game_window = None
-        schedule_window = None
-        seasons_window = None
-
-    while True:
-        window, event, values = psg.read_all_windows()
-        print(window.Title, event, values)
-
-        if event in ("Exit", psg.WIN_CLOSED):
-            break
-        elif event == "Back":
-            window.close()
-            close_all_windows()
-            main_window = get_main_window()
-        elif event == "Skaters":
-            window.close()
-            close_all_windows()
-            skaters_window = get_skaters_window()
-        elif event == "Goalies":
-            window.close()
-            close_all_windows()
-            goalies_window = get_goalies_window()
-        elif event == "Roster":
-            window.close()
-            close_all_windows()
-            roster_window = get_roster_window()
-        elif event == "Games":
-            window.close()
-            close_all_windows()
-            game_window = get_game_window()
-        elif event == "Schedule":
-            window.close()
-            close_all_windows()
-            schedule_window = get_schedule_window()
-        elif event == "Seasons":
-            window.close()
-            close_all_windows()
-            seasons_window = get_seasons_window()
-
-    window.close()
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    w.show()
+    app.exec()
