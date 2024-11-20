@@ -1,9 +1,4 @@
-TkDefaultFont:          Default for items not otherwise specified.
-TkTextFont:             Used for entry widgets, listboxes, etc.
-TkFixedFont:            A standard fixed-width font.
-TkMenuFont:             The font used for menu items.
-TkHeadingFont:          Font for column headings in lists and tables.
-TkCaptionFont:          A font for window and dialog caption bars.
-TkSmallCaptionFont:     A smaller caption font for tool dialogs.
-TkIconFont:             A font for icon captions.
-TkTooltipFont:          A font for tooltips.
+Segoe UI Segoe UI Black, Segoe UI Historic, Segoe UI Light, Segoe UI Semibold
+Segoe UI Semilight, Segoe UI Symbol, Segoe UI Variable Display, Segoe UI Variable Display Light, Segoe UI Variable Display Semib
+Segoe UI Variable Display Semil, Segoe UI Variable Small, Segoe UI Variable Small Light, Segoe UI Variable Small Semibol, Segoe UI Variable Small Semilig
+Segoe UI Variable Text, Segoe UI Variable Text Light, Segoe UI Variable Text Semibold, Segoe UI Variable Text Semiligh,
