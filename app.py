@@ -1,21 +1,25 @@
 import os
 import sys
+import api_pull as a
 import database as d
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication, QComboBox, QHBoxLayout, QLineEdit,
     QLabel, QListWidget, QPlainTextEdit, QPushButton,
-    QVBoxLayout, QWidget
+    QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
 )
 
 CAPS_ICON = "assets/caps_icon.ico"
+CURRENT_SEASON = "2425"
 
 # Alignments and fonts
 LEFT = Qt.AlignmentFlag.AlignLeft
 CENTER = Qt.AlignmentFlag.AlignCenter
 RIGHT = Qt.AlignmentFlag.AlignRight
 HEADER_FONT = QFont("Segoe UI Semibold", 20)
+LABEL_FONT = QFont("Segoe UI Semibold", 10)
+FIELD_FONT = QFont("Segoue UI", 9)
 BTN_FONT = QFont("Segoe UI", 14)
 
 
@@ -26,22 +30,22 @@ class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
         # Create widgets
-        self.header = QLabel("Please select a menu")
+        self.header = QLabel("Please select an option")
         self.skaters_button = QPushButton("Skaters")
         self.goalies_button = QPushButton("Goalies")
         self.roster_button = QPushButton("Roster")
         self.games_button = QPushButton("Games")
         self.schedule_button = QPushButton("Schedule")
         self.seasons_button = QPushButton("Seasons")
+        self.update_button = QPushButton("Update")
         self.exit_button = QPushButton("Exit")
 
         # Widget groups
         btns = [
             self.skaters_button, self.goalies_button, self.roster_button,
             self.games_button, self.schedule_button, self.seasons_button,
-            self.exit_button
+            self.exit_button, self.update_button
         ]
-        all_widgets = [self.header] + btns
 
         # Configure widgets
         self.header.setFont(HEADER_FONT)
@@ -57,12 +61,15 @@ class MainWindow(QWidget):
         self.games_button.clicked.connect(self.show_game_window)
         self.schedule_button.clicked.connect(self.show_schedule_window)
         self.seasons_button.clicked.connect(self.show_seasons_window)
+        self.update_button.clicked.connect(
+            lambda: a.bulk_update(f"data/stats_{CURRENT_SEASON}.db"))
         self.exit_button.clicked.connect(self.exit)
 
         # Set layout
         main_layout = QVBoxLayout()
         btn_row1 = QHBoxLayout()
         btn_row2 = QHBoxLayout()
+        btn_row3 = QHBoxLayout()
 
         btn_row1.addWidget(self.skaters_button, alignment=CENTER)
         btn_row1.addWidget(self.goalies_button, alignment=CENTER)
@@ -70,11 +77,13 @@ class MainWindow(QWidget):
         btn_row2.addWidget(self.games_button, alignment=CENTER)
         btn_row2.addWidget(self.schedule_button, alignment=CENTER)
         btn_row2.addWidget(self.seasons_button, alignment=CENTER)
+        btn_row3.addWidget(self.update_button, alignment=CENTER)
+        btn_row3.addWidget(self.exit_button, alignment=CENTER)
 
         main_layout.addWidget(self.header, alignment=CENTER)
         main_layout.addLayout(btn_row1)
         main_layout.addLayout(btn_row2)
-        main_layout.addWidget(self.exit_button, alignment=CENTER)
+        main_layout.addLayout(btn_row3)
 
         self.setWindowTitle("Washington Capitals Stats")
         self.setWindowIcon(QIcon(CAPS_ICON))
@@ -129,51 +138,187 @@ class SkaterWindow(QWidget):
         self.headshot = QLabel()
         self.headshot_pixmap = QPixmap("assets/team_logos/WSH.png")
         self.headshot.setPixmap(self.headshot_pixmap.scaledToWidth(200))
-        # Col 3 - G, P/GP, SHG
+        # Col 3
         self.name_label = QLabel("Name")
         self.name_input = QLineEdit()
-        # Col 4 - A, EVG, SHP, S
+        self.goals_label = QLabel("G")
+        self.goals_input = QLineEdit()
+        self.pts_per_game_label = QLabel("P/GP")
+        self.pts_per_game_input = QLineEdit()
+        self.shg_label = QLabel("SHG")
+        self.shg_input = QLineEdit()
+        # Col 4
         self.jersey_label = QLabel("#")
         self.jersey_input = QLineEdit()
-        # Col 5 - P, EVP, OTG, S%
+        self.assists_label = QLabel("A")
+        self.assists_input = QLineEdit()
+        self.evg_label = QLabel("EVG")
+        self.evg_input = QLineEdit()
+        self.shp_label = QLabel("SHP")
+        self.shp_input = QLineEdit()
+        self.shots_label = QLabel("S")
+        self.shots_input = QLineEdit()
+        # Col 5
         self.position_label = QLabel("Pos")
         self.position_input = QLineEdit()
-        # Col 6 - +/-, PPG, GWG, FOW%
+        self.points_label = QLabel("P")
+        self.points_input = QLineEdit()
+        self.evp_label = QLabel("EVP")
+        self.evp_input = QLineEdit()
+        self.otg_label = QLabel("OTG")
+        self.otg_input = QLineEdit()
+        self.shot_pctg_label = QLabel("S%")
+        self.shot_pctg_input = QLineEdit()
+        # Col 6
         self.shoots_label = QLabel("Sh")
         self.shoots_input = QLineEdit()
-        # Col 7 - PIM, PPP, TOI/GP
+        self.plus_minus_label = QLabel("+/-")
+        self.plus_minus_input = QLineEdit()
+        self.ppg_label = QLabel("PPG")
+        self.ppg_input = QLineEdit()
+        self.gwg_label = QLabel("GWG")
+        self.gwg_input = QLineEdit()
+        self.fow_label = QLabel("FOW%")
+        self.fow_input = QLineEdit()
+        # Col 7
         self.gp_label = QLabel("GP")
         self.gp_input = QLineEdit()
+        self.pim_label = QLabel("PIM")
+        self.pim_input = QLineEdit()
+        self.ppp_label = QLabel("PPP")
+        self.ppp_input = QLineEdit()
+        self.toi_label = QLabel("TOI/GP")
+        self.toi_input = QLineEdit()
+
+        self.btm_row_spacer = QSpacerItem(
+            20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.back_btn = QPushButton("Back")
         self.back_btn.clicked.connect(self.go_back)
 
         # Widget Groups
+        labels = [self.name_label, self.jersey_label, self.position_label, self.shoots_label, self.gp_label,
+                  self.goals_label, self.assists_label, self.points_label, self.plus_minus_label, self.pim_label,
+                  self.pts_per_game_label, self.evg_label, self.evp_label, self.ppg_label, self.ppp_label,
+                  self.shg_label, self.shp_label, self.otg_label, self.gwg_label, self.toi_label,
+                  self.shots_label, self.shot_pctg_label, self.fow_label]
+        inputs = [self.name_input, self.jersey_input, self.position_input, self.shoots_input, self.gp_input,
+                  self.goals_input, self.assists_input, self.points_input, self.plus_minus_input, self.pim_input,
+                  self.pts_per_game_input, self.evg_input, self.evp_input, self.ppg_input, self.ppp_input,
+                  self.shg_input, self.shp_input, self.otg_input, self.gwg_input, self.toi_input,
+                  self.shots_input, self.shot_pctg_input, self.fow_input]
+        lists = [self.season_list, self.player_list]
+        btns = [self.back_btn]
+        all_widgets = labels + inputs + lists + btns
 
         # Configure Widgets
+        for lbl in labels:
+            lbl.setFont(LABEL_FONT)
+
+        for i in inputs:
+            i.setFont(FIELD_FONT)
+
+        for l in lists:
+            l.setMaximumWidth(150)
         self.player_list.addItem("Please select a season")
         self.player_list.currentItemChanged.connect(self.load_player_from_list)
         self.populate_seasons_combobox()
+
+        for b in btns:
+            b.setFont(BTN_FONT)
+            b.setFixedSize(90, 30)
 
         # Connect events
         self.season_list.currentIndexChanged.connect(self.populate_player_list)
 
         # Set layout
-        layout = QHBoxLayout()
+        layout = QVBoxLayout()
+        horiz_layout = QHBoxLayout()
 
         list_layout = QVBoxLayout()
         list_layout.addWidget(self.season_list)
         list_layout.addWidget(self.player_list)
 
-        layout.addLayout(list_layout)
+        col3 = QVBoxLayout()  # name, goals, p/gp, shg
+        col3.addWidget(self.name_label, alignment=CENTER)
+        col3.addWidget(self.name_input)
+        col3.addWidget(self.goals_label, alignment=CENTER)
+        col3.addWidget(self.goals_input)
+        col3.addWidget(self.pts_per_game_label, alignment=CENTER)
+        col3.addWidget(self.pts_per_game_input)
+        col3.addWidget(self.shg_label, alignment=CENTER)
+        col3.addWidget(self.shg_input)
+        col3.addSpacerItem(self.btm_row_spacer)
+        col4 = QVBoxLayout()  # jersey, assists, evg, shp, shots
+        col4.addWidget(self.jersey_label, alignment=CENTER)
+        col4.addWidget(self.jersey_input)
+        col4.addWidget(self.assists_label, alignment=CENTER)
+        col4.addWidget(self.assists_input)
+        col4.addWidget(self.evg_label, alignment=CENTER)
+        col4.addWidget(self.evg_input)
+        col4.addWidget(self.shp_label, alignment=CENTER)
+        col4.addWidget(self.shp_input)
+        col4.addWidget(self.shots_label, alignment=CENTER)
+        col4.addWidget(self.shots_input)
+        col5 = QVBoxLayout()  # pos, points, evp, otg, s%
+        col5.addWidget(self.position_label, alignment=CENTER)
+        col5.addWidget(self.position_input)
+        col5.addWidget(self.points_label, alignment=CENTER)
+        col5.addWidget(self.points_input)
+        col5.addWidget(self.evp_label, alignment=CENTER)
+        col5.addWidget(self.evp_input)
+        col5.addWidget(self.otg_label, alignment=CENTER)
+        col5.addWidget(self.otg_input)
+        col5.addWidget(self.shot_pctg_label, alignment=CENTER)
+        col5.addWidget(self.shot_pctg_input)
+        col6 = QVBoxLayout()  # sh, +/-, ppg, gwg, fow%
+        col6.addWidget(self.shoots_label, alignment=CENTER)
+        col6.addWidget(self.shoots_input)
+        col6.addWidget(self.plus_minus_label, alignment=CENTER)
+        col6.addWidget(self.plus_minus_input)
+        col6.addWidget(self.ppg_label, alignment=CENTER)
+        col6.addWidget(self.ppg_input)
+        col6.addWidget(self.gwg_label, alignment=CENTER)
+        col6.addWidget(self.gwg_input)
+        col6.addWidget(self.fow_label, alignment=CENTER)
+        col6.addWidget(self.fow_input)
+        col7 = QVBoxLayout()  # gp, pim, ppp, toi/gp
+        col7.addWidget(self.gp_label, alignment=CENTER)
+        col7.addWidget(self.gp_input)
+        col7.addWidget(self.pim_label, alignment=CENTER)
+        col7.addWidget(self.pim_input)
+        col7.addWidget(self.ppp_label, alignment=CENTER)
+        col7.addWidget(self.ppp_input)
+        col7.addWidget(self.toi_label, alignment=CENTER)
+        col7.addWidget(self.toi_input)
+        col7.addSpacerItem(self.btm_row_spacer)
+
+        horiz_layout.addLayout(list_layout)
+        horiz_layout.addWidget(self.headshot)
+        horiz_layout.addLayout(col3)
+        horiz_layout.addLayout(col4)
+        horiz_layout.addLayout(col5)
+        horiz_layout.addLayout(col6)
+        horiz_layout.addLayout(col7)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(self.back_btn)
+
+        layout.addLayout(horiz_layout)
+        layout.addSpacerItem(self.btm_row_spacer)
+        layout.addLayout(btn_row)
         self.setWindowTitle("Washington Capitals Skaters")
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
+        self.setFixedSize(910, 320)
 
     def go_back(self) -> None:
         self.close()
         global w
         w.show()
+
+    def get_size(self) -> None:
+        print(self.size())
 
     def populate_seasons_combobox(self) -> None:
         data_files = os.listdir("data")
@@ -212,6 +357,29 @@ class SkaterWindow(QWidget):
             player_headshot = QPixmap(
                 f"assets/headshots/{player_data[2].lower().replace(" ", "_")}.png")
             self.headshot.setPixmap(player_headshot.scaledToWidth(200))
+            self.name_input.setText(player_data[2])
+            self.jersey_input.setText(str(player_data[3]))
+            self.shoots_input.setText(player_data[4])
+            self.position_input.setText(player_data[5])
+            self.gp_input.setText(str(player_data[6]))
+            self.goals_input.setText(str(player_data[7]))
+            self.assists_input.setText(str(player_data[8]))
+            self.points_input.setText(str(player_data[9]))
+            self.plus_minus_input.setText(str(player_data[10]))
+            self.pim_input.setText(str(player_data[11]))
+            self.pts_per_game_input.setText(str(player_data[12]))
+            self.evg_input.setText(str(player_data[13]))
+            self.evp_input.setText(str(player_data[14]))
+            self.ppg_input.setText(str(player_data[15]))
+            self.ppp_input.setText(str(player_data[16]))
+            self.shg_input.setText(str(player_data[17]))
+            self.shp_input.setText(str(player_data[18]))
+            self.otg_input.setText(str(player_data[19]))
+            self.gwg_input.setText(str(player_data[20]))
+            self.shots_input.setText(str(player_data[21]))
+            self.shot_pctg_input.setText(str(player_data[22]))
+            self.toi_input.setText(str(player_data[23]))
+            self.fow_input.setText(str(player_data[24]))
         except AttributeError as e:
             print(e)
 
