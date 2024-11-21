@@ -2,7 +2,7 @@ import os
 import sys
 import api_pull as a
 import database as d
-from PyQt6.QtGui import QColor, QFont, QIcon, QPalette, QPixmap
+from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication, QComboBox, QHBoxLayout, QLineEdit,
@@ -12,9 +12,6 @@ from PyQt6.QtWidgets import (
 
 CAPS_ICON = "assets/caps_icon.ico"
 CURRENT_SEASON = "2425"
-TEXT_COLOR = QColor(39, 40, 56)
-PALETTE = QPalette()
-PALETTE.setColor(QPalette.ColorRole.WindowText, TEXT_COLOR)
 
 # Alignments and fonts
 LEFT = Qt.AlignmentFlag.AlignLeft
@@ -99,7 +96,6 @@ class MainWindow(QWidget):
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(main_layout)
         self.setFixedSize(400, 300)
-        self.setPalette(PALETTE)
 
     def show_skater_window(self) -> None:
         if self.skater_window is None:
@@ -234,6 +230,8 @@ class SkaterWindow(QWidget):
 
         for i in inputs:
             i.setFont(FIELD_FONT)
+            i.setAlignment(CENTER)
+            i.setReadOnly(True)
 
         for l in lists:
             l.setMaximumWidth(150)
@@ -328,7 +326,6 @@ class SkaterWindow(QWidget):
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
         self.setFixedSize(910, 320)
-        self.setPalette(PALETTE)
 
     def go_back(self) -> None:
         self.hide()
