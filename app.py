@@ -2,7 +2,7 @@ import os
 import sys
 import api_pull as a
 import database as d
-from PyQt6.QtGui import QFont, QIcon, QPixmap
+from PyQt6.QtGui import QColor, QFont, QIcon, QPalette, QPixmap
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication, QComboBox, QHBoxLayout, QLineEdit,
@@ -12,6 +12,9 @@ from PyQt6.QtWidgets import (
 
 CAPS_ICON = "assets/caps_icon.ico"
 CURRENT_SEASON = "2425"
+TEXT_COLOR = QColor(39, 40, 56)
+PALETTE = QPalette()
+PALETTE.setColor(QPalette.ColorRole.WindowText, TEXT_COLOR)
 
 # Alignments and fonts
 LEFT = Qt.AlignmentFlag.AlignLeft
@@ -29,6 +32,13 @@ class MainWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.skater_window = None
+        self.goalie_window = None
+        self.roster_window = None
+        self.game_window = None
+        self.schedule_window = None
+        self.seasons_window = None
+
         # Create widgets
         self.header = QLabel("Please select an option")
         self.skaters_button = QPushButton("Skaters")
@@ -89,34 +99,41 @@ class MainWindow(QWidget):
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(main_layout)
         self.setFixedSize(400, 300)
+        self.setPalette(PALETTE)
 
     def show_skater_window(self) -> None:
-        self.skater_window = SkaterWindow()
+        if self.skater_window is None:
+            self.skater_window = SkaterWindow()
         self.skater_window.show()
         self.hide()
 
     def show_goalie_window(self) -> None:
-        self.goalie_window = GoalieWindow()
+        if self.goalie_window is None:
+            self.goalie_window = GoalieWindow()
         self.goalie_window.show()
         self.hide()
 
     def show_roster_window(self) -> None:
-        self.roster_window = RosterWindow()
+        if self.roster_window is None:
+            self.roster_window = RosterWindow()
         self.roster_window.show()
         self.hide()
 
     def show_game_window(self) -> None:
-        self.game_window = GameWindow()
+        if self.game_window is None:
+            self.game_window = GameWindow()
         self.game_window.show()
         self.hide()
 
     def show_schedule_window(self) -> None:
-        self.schedule_window = ScheduleWindow()
+        if self.schedule_window is None:
+            self.schedule_window = ScheduleWindow()
         self.schedule_window.show()
         self.hide()
 
     def show_seasons_window(self) -> None:
-        self.seasons_window = SeasonsWindow()
+        if self.seasons_window is None:
+            self.seasons_window = SeasonsWindow()
         self.seasons_window.show()
         self.hide()
 
@@ -311,9 +328,10 @@ class SkaterWindow(QWidget):
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
         self.setFixedSize(910, 320)
+        self.setPalette(PALETTE)
 
     def go_back(self) -> None:
-        self.close()
+        self.hide()
         global w
         w.show()
 
@@ -400,7 +418,7 @@ class GoalieWindow(QWidget):
         self.setLayout(layout)
 
     def go_back(self) -> None:
-        self.close()
+        self.hide()
         global w
         w.show()
 
@@ -421,7 +439,7 @@ class RosterWindow(QWidget):
         self.setLayout(layout)
 
     def go_back(self) -> None:
-        self.close()
+        self.hide()
         global w
         w.show()
 
@@ -442,7 +460,7 @@ class GameWindow(QWidget):
         self.setLayout(layout)
 
     def go_back(self) -> None:
-        self.close()
+        self.hide()
         global w
         w.show()
 
@@ -463,7 +481,7 @@ class ScheduleWindow(QWidget):
         self.setLayout(layout)
 
     def go_back(self) -> None:
-        self.close()
+        self.hide()
         global w
         w.show()
 
@@ -484,7 +502,7 @@ class SeasonsWindow(QWidget):
         self.setLayout(layout)
 
     def go_back(self) -> None:
-        self.close()
+        self.hide()
         global w
         w.show()
 
