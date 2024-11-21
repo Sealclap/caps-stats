@@ -3,7 +3,7 @@ import sys
 import api_pull as a
 import database as d
 from PyQt6.QtGui import QFont, QIcon, QPixmap
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import (
     QApplication, QComboBox, QHBoxLayout, QLineEdit,
     QLabel, QListWidget, QPlainTextEdit, QPushButton,
@@ -21,6 +21,7 @@ HEADER_FONT = QFont("Segoe UI Semibold", 20)
 LABEL_FONT = QFont("Segoe UI Semibold", 10)
 FIELD_FONT = QFont("Segoue UI", 9)
 BTN_FONT = QFont("Segoe UI", 14)
+BTN_SIZE = QSize(90, 30)
 
 
 class MainWindow(QWidget):
@@ -145,8 +146,8 @@ class SkaterWindow(QWidget):
         super().__init__()
         # Create widgets
         # Col 1
-        self.player_list = QListWidget()
         self.season_list = QComboBox()
+        self.player_list = QListWidget()
         # Col2
         self.headshot = QLabel()
         self.headshot_pixmap = QPixmap("assets/team_logos/WSH.png")
@@ -207,7 +208,6 @@ class SkaterWindow(QWidget):
             20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.back_btn = QPushButton("Back")
-        self.back_btn.clicked.connect(self.go_back)
 
         # Widget Groups
         labels = [self.name_label, self.jersey_label, self.position_label, self.shoots_label, self.gp_label,
@@ -222,7 +222,6 @@ class SkaterWindow(QWidget):
                   self.shots_input, self.shot_pctg_input, self.fow_input]
         lists = [self.season_list, self.player_list]
         btns = [self.back_btn]
-        all_widgets = labels + inputs + lists + btns
 
         # Configure Widgets
         for lbl in labels:
@@ -236,14 +235,15 @@ class SkaterWindow(QWidget):
         for l in lists:
             l.setMaximumWidth(150)
         self.player_list.addItem("Please select a season")
-        self.player_list.currentItemChanged.connect(self.load_player_from_list)
         self.populate_seasons_combobox()
 
         for b in btns:
             b.setFont(BTN_FONT)
-            b.setFixedSize(90, 30)
+            b.setFixedSize(BTN_SIZE)
 
         # Connect events
+        self.back_btn.clicked.connect(self.go_back)
+        self.player_list.currentItemChanged.connect(self.load_player_from_list)
         self.season_list.currentIndexChanged.connect(self.populate_player_list)
 
         # Set layout
@@ -332,9 +332,6 @@ class SkaterWindow(QWidget):
         global w
         w.show()
 
-    def get_size(self) -> None:
-        print(self.size())
-
     def populate_seasons_combobox(self) -> None:
         data_files = os.listdir("data")
         db_files = [db for db in data_files if db.startswith("stats_")]
@@ -405,19 +402,239 @@ class GoalieWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        layout = QHBoxLayout()
+
+        # Create widgets
+        # Col 1
+        self.season_list = QComboBox()
+        self.player_list = QListWidget()
+        # Col 2
+        self.headshot = QLabel()
+        self.headshot_pixmap = QPixmap("assets/team_logos/WSH.png")
+        self.headshot.setPixmap(self.headshot_pixmap.scaledToWidth(200))
+        # Col 3
+        self.name_label = QLabel("Name")
+        self.name_input = QLineEdit()
+        self.gp_label = QLabel("GP")
+        self.gp_input = QLineEdit()
+        self.sa_label = QLabel("SA")
+        self.sa_input = QLineEdit()
+        self.so_label = QLabel("SO")
+        self.so_input = QLineEdit()
+        # Col 4
+        self.jersey_label = QLabel("#")
+        self.jersey_input = QLineEdit()
+        self.gs_label = QLabel("GS")
+        self.gs_input = QLineEdit()
+        self.svs_label = QLabel("SVS")
+        self.svs_input = QLineEdit()
+        self.goals_label = QLabel("G")
+        self.goals_input = QLineEdit()
+        # Col 5
+        self.position_label = QLabel("Pos")
+        self.position_input = QLineEdit()
+        self.wins_label = QLabel("W")
+        self.wins_input = QLineEdit()
+        self.ga_label = QLabel("GA")
+        self.ga_input = QLineEdit()
+        self.assists_label = QLabel("A")
+        self.assists_input = QLineEdit()
+        # Col 6
+        self.catches_label = QLabel("C")
+        self.catches_input = QLineEdit()
+        self.losses_label = QLabel("L")
+        self.losses_input = QLineEdit()
+        self.sv_pctg_label = QLabel("SV%")
+        self.sv_pctg_input = QLineEdit()
+        self.points_label = QLabel("P")
+        self.points_input = QLineEdit()
+        # Col 7
+        self.toi_label = QLabel("TOI")
+        self.toi_input = QLineEdit()
+        self.otl_label = QLabel("OTL")
+        self.otl_input = QLineEdit()
+        self.gaa_label = QLabel("GAA")
+        self.gaa_input = QLineEdit()
+        self.pim_label = QLabel("PIM")
+        self.pim_input = QLineEdit()
+        # Btns
         self.back_btn = QPushButton("Back")
+        # Spacer
+        self.vert_spacer = QSpacerItem(
+            20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        # Widget groups
+        labels = [self.name_label, self.jersey_label, self.position_label, self.catches_label, self.toi_label,
+                  self.gp_label, self.gs_label, self.wins_label, self.losses_label, self.otl_label,
+                  self.sa_label, self.svs_label, self.ga_label, self.sv_pctg_label, self.gaa_label,
+                  self.so_label, self.goals_label, self.assists_label, self.points_label, self.pim_label]
+        inputs = [self.name_input, self.jersey_input, self.position_input, self.catches_input, self.toi_input,
+                  self.gp_input, self.gs_input, self.wins_input, self.losses_input, self.otl_input,
+                  self.sa_input, self.svs_input, self.ga_input, self.sv_pctg_input, self.gaa_input,
+                  self.so_input, self.goals_input, self.assists_input, self.points_input, self.pim_input]
+        lists = [self.season_list, self.player_list]
+        btns = [self.back_btn]
+
+        # Configure widgets
+        for lbl in labels:
+            lbl.setFont(LABEL_FONT)
+
+        for i in inputs:
+            i.setFont(FIELD_FONT)
+            i.setAlignment(CENTER)
+            i.setReadOnly(True)
+
+        for l in lists:
+            l.setMaximumWidth(150)
+        self.player_list.addItem("Please select a season")
+        self.populate_seasons_combobox()
+
+        for b in btns:
+            b.setFont(BTN_FONT)
+            b.setFixedSize(BTN_SIZE)
+
+        # Connect events
         self.back_btn.clicked.connect(self.go_back)
-        layout.addWidget(self.back_btn)
+        self.player_list.currentItemChanged.connect(self.load_goalie_from_list)
+        self.season_list.currentIndexChanged.connect(self.populate_goalie_list)
+
+        # Set layout
+        layout = QVBoxLayout()
+        horiz_layout = QHBoxLayout()
+
+        list_layout = QVBoxLayout()
+        list_layout.addWidget(self.season_list)
+        list_layout.addWidget(self.player_list)
+
+        col3 = QVBoxLayout()
+        col3.addWidget(self.name_label, alignment=CENTER)
+        col3.addWidget(self.name_input)
+        col3.addWidget(self.gp_label, alignment=CENTER)
+        col3.addWidget(self.gp_input)
+        col3.addWidget(self.sa_label, alignment=CENTER)
+        col3.addWidget(self.sa_input)
+        col3.addWidget(self.so_label, alignment=CENTER)
+        col3.addWidget(self.so_input)
+        col4 = QVBoxLayout()
+        col4.addWidget(self.jersey_label, alignment=CENTER)
+        col4.addWidget(self.jersey_input)
+        col4.addWidget(self.gs_label, alignment=CENTER)
+        col4.addWidget(self.gs_input)
+        col4.addWidget(self.svs_label, alignment=CENTER)
+        col4.addWidget(self.svs_input)
+        col4.addWidget(self.goals_label, alignment=CENTER)
+        col4.addWidget(self.goals_input)
+        col5 = QVBoxLayout()
+        col5.addWidget(self.position_label, alignment=CENTER)
+        col5.addWidget(self.position_input)
+        col5.addWidget(self.wins_label, alignment=CENTER)
+        col5.addWidget(self.wins_input)
+        col5.addWidget(self.ga_label, alignment=CENTER)
+        col5.addWidget(self.ga_input)
+        col5.addWidget(self.assists_label, alignment=CENTER)
+        col5.addWidget(self.assists_input)
+        col6 = QVBoxLayout()
+        col6.addWidget(self.catches_label, alignment=CENTER)
+        col6.addWidget(self.catches_input)
+        col6.addWidget(self.losses_label, alignment=CENTER)
+        col6.addWidget(self.losses_input)
+        col6.addWidget(self.sv_pctg_label, alignment=CENTER)
+        col6.addWidget(self.sv_pctg_input)
+        col6.addWidget(self.points_label, alignment=CENTER)
+        col6.addWidget(self.points_input)
+        col7 = QVBoxLayout()
+        col7.addWidget(self.toi_label, alignment=CENTER)
+        col7.addWidget(self.toi_input)
+        col7.addWidget(self.otl_label, alignment=CENTER)
+        col7.addWidget(self.otl_input)
+        col7.addWidget(self.gaa_label, alignment=CENTER)
+        col7.addWidget(self.gaa_input)
+        col7.addWidget(self.pim_label, alignment=CENTER)
+        col7.addWidget(self.pim_input)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(self.back_btn)
+
+        horiz_layout.addLayout(list_layout)
+        horiz_layout.addWidget(self.headshot)
+        horiz_layout.addLayout(col3)
+        horiz_layout.addLayout(col4)
+        horiz_layout.addLayout(col5)
+        horiz_layout.addLayout(col6)
+        horiz_layout.addLayout(col7)
+
+        layout.addLayout(horiz_layout)
+        layout.addSpacerItem(self.vert_spacer)
+        layout.addLayout(btn_row)
 
         self.setWindowTitle("Washington Capitals Goalies")
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
+        self.setFixedSize(1073, 300)
 
     def go_back(self) -> None:
         self.hide()
         global w
         w.show()
+
+    def load_goalie_from_list(self) -> None:
+        try:
+            curr_season = self.season_list.currentText()
+            if curr_season == "-Seasons-":
+                return
+            name = self.player_list.currentItem().text()
+            player_data = d.fetch_one(
+                "goalies", "name = '" + name + "'", f"data/{self.season_dict[curr_season]}")
+
+            # Insert data into correct fields
+            player_headshot = QPixmap(
+                f"assets/headshots/{player_data[2].lower().replace(" ", "_")}.png")
+            self.headshot.setPixmap(player_headshot.scaledToWidth(200))
+            self.name_input.setText(player_data[2])
+            self.jersey_input.setText(str(player_data[3]))
+            self.catches_input.setText(player_data[4])
+            self.gp_input.setText(str(player_data[5]))
+            self.gs_input.setText(str(player_data[6]))
+            self.wins_input.setText(str(player_data[7]))
+            self.losses_input.setText(str(player_data[8]))
+            self.otl_input.setText(str(player_data[9]))
+            self.sa_input.setText(str(player_data[10]))
+            self.svs_input.setText(str(player_data[11]))
+            self.ga_input.setText(str(player_data[12]))
+            self.sv_pctg_input.setText(str(player_data[13]))
+            self.gaa_input.setText(str(player_data[14]))
+            self.toi_input.setText(player_data[15])
+            self.so_input.setText(str(player_data[16]))
+            self.goals_input.setText(str(player_data[17]))
+            self.assists_input.setText(str(player_data[18]))
+            self.points_input.setText(str(player_data[19]))
+            self.pim_input.setText(str(player_data[20]))
+            self.position_input.setText("G")
+        except AttributeError as e:
+            print(e)
+
+    def populate_seasons_combobox(self) -> None:
+        data_files = os.listdir("data")
+        db_files = [db for db in data_files if db.startswith("stats_")]
+        seasons_raw = [s[s.index("_")+1:s.index(".db")] for s in db_files]
+        seasons_fmt = [f"20{s[:2]}-20{s[2:]}" for s in seasons_raw]
+        self.season_list.addItems(["-Seasons-"] + seasons_fmt)
+        # Add seasons to dict for easier conversion later
+        self.season_dict = {}
+        for i in range(len(db_files)):
+            self.season_dict[seasons_fmt[i]] = db_files[i]
+
+    def populate_goalie_list(self) -> None:
+        self.player_list.clear()
+        curr_season = self.season_list.currentText()
+        if curr_season == "-Seasons-":
+            self.player_list.addItem("Please select a season")
+            return
+        goalies = d.fetch_all(
+            "goalies", f"data/{self.season_dict[curr_season]}")
+        names = []
+        for goalie in goalies:
+            names.append(goalie[2])
+        self.player_list.addItems(names)
 
 
 class RosterWindow(QWidget):
@@ -426,11 +643,50 @@ class RosterWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        layout = QHBoxLayout()
+        # Create widgets
+        self.season_list = QComboBox()
+        self.name_label = QLabel("Name")
+        self.jersey_label = QLabel("#")
+        self.sc_label = QLabel("S/C")
+        self.pos_label = QLabel("Pos")
+        self.ht_label = QLabel("Ht")
+        self.wt_label = QLabel("Wt")
+        self.born_label = QLabel("Born")
+        self.bp_label = QLabel("Birthplace")
         self.back_btn = QPushButton("Back")
-        self.back_btn.clicked.connect(self.go_back)
-        layout.addWidget(self.back_btn)
 
+        # Widget groups
+        labels = [
+            self.name_label, self.jersey_label, self.sc_label, self.pos_label,
+            self.ht_label, self.wt_label, self.born_label, self.bp_label]
+        btns = [self.back_btn]
+
+        # Configure widgets
+        for lbl in labels:
+            lbl.setFont(LABEL_FONT)
+
+        self.season_list.setMaximumWidth(125)
+        self.populate_seasons_combobox()
+
+        for b in btns:
+            b.setFont(BTN_FONT)
+            b.setFixedSize(BTN_SIZE)
+
+        # Connect events
+        self.back_btn.clicked.connect(self.go_back)
+        self.season_list.currentIndexChanged.connect(self.show_roster)
+
+        # Set layout
+        layout = QVBoxLayout()
+
+        self.table_layout = QHBoxLayout()
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(self.back_btn)
+
+        layout.addWidget(self.season_list, alignment=LEFT)
+        layout.addLayout(self.table_layout)
+        layout.addLayout(btn_row)
         self.setWindowTitle("Washington Capitals Roster")
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
@@ -439,6 +695,91 @@ class RosterWindow(QWidget):
         self.hide()
         global w
         w.show()
+
+    def populate_seasons_combobox(self) -> None:
+        data_files = os.listdir("data")
+        db_files = [db for db in data_files if db.startswith("stats_")]
+        seasons_raw = [s[s.index("_")+1:s.index(".db")] for s in db_files]
+        seasons_fmt = [f"20{s[:2]}-20{s[2:]}" for s in seasons_raw]
+        self.season_list.addItems(["-Seasons-"] + seasons_fmt)
+        # Add seasons to dict for easier conversion later
+        self.season_dict = {}
+        for i in range(len(db_files)):
+            self.season_dict[seasons_fmt[i]] = db_files[i]
+
+    def show_roster(self) -> None:
+        self.clear_roster()
+        try:
+            curr_season = self.season_list.currentText()
+            if curr_season == "-Seasons-":
+                return
+            roster_data = d.fetch_all(
+                "roster", f"data/{self.season_dict[curr_season]}")
+
+            # Insert the data into new fields
+            names = []
+            jerseys = []
+            shoots_catches = []
+            positions = []
+            hts = []
+            wts = []
+            bdays = []
+            bplaces = []
+            for player in roster_data:
+                names.append(player[2])
+                jerseys.append(player[3])
+                shoots_catches.append(player[4])
+                positions.append(player[5])
+                hts.append(player[6])
+                wts.append(player[7])
+                bdays.append(player[8])
+                bplaces.append(player[9])
+
+            name_col = QVBoxLayout()
+            jersey_col = QVBoxLayout()
+            sc_col = QVBoxLayout()
+            pos_col = QVBoxLayout()
+            ht_col = QVBoxLayout()
+            wt_col = QVBoxLayout()
+            born_col = QVBoxLayout()
+            bplace_col = QVBoxLayout()
+
+            name_col.addChildWidget(self.name_label)
+            jersey_col.addChildWidget(self.jersey_label)
+            sc_col.addChildWidget(self.sc_label)
+            pos_col.addChildWidget(self.pos_label)
+            ht_col.addChildWidget(self.ht_label)
+            wt_col.addChildWidget(self.wt_label)
+            born_col.addChildWidget(self.born_label)
+            bplace_col.addChildWidget(self.bp_label)
+
+            for i in range(len(names)):
+                name_col.addWidget(QLabel(names[i]))
+                jersey_col.addWidget(QLabel(str(jerseys[i])))
+                sc_col.addWidget(QLabel(shoots_catches[i]))
+                pos_col.addWidget(QLabel(positions[i]))
+                ht_col.addWidget(QLabel(hts[i]))
+                wt_col.addWidget(QLabel(str(wts[i])))
+                born_col.addWidget(QLabel(bdays[i]))
+                bplace_col.addWidget(QLabel(bplaces[i]))
+
+            self.table_layout.addChildLayout(name_col)
+            self.table_layout.addChildLayout(jersey_col)
+            self.table_layout.addChildLayout(sc_col)
+            self.table_layout.addChildLayout(pos_col)
+            self.table_layout.addChildLayout(ht_col)
+            self.table_layout.addChildLayout(wt_col)
+            self.table_layout.addChildLayout(born_col)
+            self.table_layout.addChildLayout(bplace_col)
+        except AttributeError as e:
+            print(e)
+
+        self.update()
+        # TODO: remove after testing
+        self.clear_roster()
+
+    def clear_roster(self) -> None:
+        print(self.table_layout.children())
 
 
 class GameWindow(QWidget):
