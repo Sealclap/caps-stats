@@ -679,17 +679,44 @@ class RosterWindow(QWidget):
         # Set layout
         layout = QVBoxLayout()
 
-        self.table_layout = QHBoxLayout()
+        self.name_col = QVBoxLayout()
+        self.jersey_col = QVBoxLayout()
+        self.sc_col = QVBoxLayout()
+        self.pos_col = QVBoxLayout()
+        self.ht_col = QVBoxLayout()
+        self.wt_col = QVBoxLayout()
+        self.bday_col = QVBoxLayout()
+        self.bplace_col = QVBoxLayout()
+
+        self.name_col.addWidget(self.name_label)
+        self.jersey_col.addWidget(self.jersey_label)
+        self.sc_col.addWidget(self.sc_label)
+        self.pos_col.addWidget(self.pos_label)
+        self.ht_col.addWidget(self.ht_label)
+        self.wt_col.addWidget(self.wt_label)
+        self.bday_col.addWidget(self.born_label)
+        self.bplace_col.addWidget(self.bp_label)
+
+        table_layout = QHBoxLayout()
+        table_layout.addLayout(self.name_col)
+        table_layout.addLayout(self.jersey_col)
+        table_layout.addLayout(self.sc_col)
+        table_layout.addLayout(self.pos_col)
+        table_layout.addLayout(self.ht_col)
+        table_layout.addLayout(self.wt_col)
+        table_layout.addLayout(self.bday_col)
+        table_layout.addLayout(self.bplace_col)
 
         btn_row = QHBoxLayout()
         btn_row.addWidget(self.back_btn)
 
         layout.addWidget(self.season_list, alignment=LEFT)
-        layout.addLayout(self.table_layout)
+        layout.addLayout(table_layout)
         layout.addLayout(btn_row)
         self.setWindowTitle("Washington Capitals Roster")
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
+        self.setMinimumSize(610, 650)
 
     def go_back(self) -> None:
         self.hide()
@@ -735,51 +762,56 @@ class RosterWindow(QWidget):
                 bdays.append(player[8])
                 bplaces.append(player[9])
 
-            name_col = QVBoxLayout()
-            jersey_col = QVBoxLayout()
-            sc_col = QVBoxLayout()
-            pos_col = QVBoxLayout()
-            ht_col = QVBoxLayout()
-            wt_col = QVBoxLayout()
-            born_col = QVBoxLayout()
-            bplace_col = QVBoxLayout()
-
-            name_col.addChildWidget(self.name_label)
-            jersey_col.addChildWidget(self.jersey_label)
-            sc_col.addChildWidget(self.sc_label)
-            pos_col.addChildWidget(self.pos_label)
-            ht_col.addChildWidget(self.ht_label)
-            wt_col.addChildWidget(self.wt_label)
-            born_col.addChildWidget(self.born_label)
-            bplace_col.addChildWidget(self.bp_label)
-
             for i in range(len(names)):
-                name_col.addWidget(QLabel(names[i]))
-                jersey_col.addWidget(QLabel(str(jerseys[i])))
-                sc_col.addWidget(QLabel(shoots_catches[i]))
-                pos_col.addWidget(QLabel(positions[i]))
-                ht_col.addWidget(QLabel(hts[i]))
-                wt_col.addWidget(QLabel(str(wts[i])))
-                born_col.addWidget(QLabel(bdays[i]))
-                bplace_col.addWidget(QLabel(bplaces[i]))
-
-            self.table_layout.addChildLayout(name_col)
-            self.table_layout.addChildLayout(jersey_col)
-            self.table_layout.addChildLayout(sc_col)
-            self.table_layout.addChildLayout(pos_col)
-            self.table_layout.addChildLayout(ht_col)
-            self.table_layout.addChildLayout(wt_col)
-            self.table_layout.addChildLayout(born_col)
-            self.table_layout.addChildLayout(bplace_col)
+                self.name_col.insertWidget(-1, QLabel(names[i]))
+                self.jersey_col.insertWidget(-1, QLabel(str(jerseys[i])))
+                self.sc_col.insertWidget(-1, QLabel(shoots_catches[i]))
+                self.pos_col.insertWidget(-1, QLabel(positions[i]))
+                self.ht_col.insertWidget(-1, QLabel(hts[i]))
+                self.wt_col.insertWidget(-1, QLabel(str(wts[i])))
+                self.bday_col.insertWidget(-1, QLabel(bdays[i]))
+                self.bplace_col.insertWidget(-1, QLabel(bplaces[i]))
         except AttributeError as e:
             print(e)
 
-        self.update()
-        # TODO: remove after testing
-        self.clear_roster()
-
     def clear_roster(self) -> None:
-        print(self.table_layout.children())
+        cols = [
+            self.name_col, self.jersey_col, self.sc_col, self.pos_col,
+            self.ht_col, self.wt_col, self.bday_col, self.bplace_col
+        ]
+        for col in cols:
+            while col.count():
+                item = col.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                elif item.layout() is not None:
+                    self.clear_roster(item.layout())
+
+        self.name_label = QLabel("Name")
+        self.jersey_label = QLabel("#")
+        self.sc_label = QLabel("S/C")
+        self.pos_label = QLabel("Pos")
+        self.ht_label = QLabel("Ht")
+        self.wt_label = QLabel("Wt")
+        self.born_label = QLabel("Born")
+        self.bp_label = QLabel("Birthplace")
+
+        labels = [
+            self.name_label, self.jersey_label, self.sc_label, self.pos_label,
+            self.ht_label, self.wt_label, self.born_label, self.bp_label
+        ]
+        for lbl in labels:
+            lbl.setFont(LABEL_FONT)
+
+        self.name_col.addWidget(self.name_label)
+        self.jersey_col.addWidget(self.jersey_label)
+        self.sc_col.addWidget(self.sc_label)
+        self.pos_col.addWidget(self.pos_label)
+        self.ht_col.addWidget(self.ht_label)
+        self.wt_col.addWidget(self.wt_label)
+        self.bday_col.addWidget(self.born_label)
+        self.bplace_col.addWidget(self.bp_label)
 
 
 class GameWindow(QWidget):
