@@ -376,12 +376,12 @@ def pull_game_by_id(game_id: str | int) -> None:
         caps_goalie = starting_goalies["away"]
         opp_goalie = starting_goalies["home"]
 
-    game_columns = ["opponent", "home_away", "date", "date_str", "goalie", "opp_goalie", "sog", "opp_sog",
+    game_columns = ["opponent", "home_away", "date", "goalie", "opp_goalie", "sog", "opp_sog",
                     "fop", "opp_fop", "pp", "ppp", "opp_pp", "opp_ppp", "pim", "opp_pim", "hits", "opp_hits",
                     "bs", "opp_bs", "gv", "opp_gv", "tk", "opp_tk", "goals", "opp_goals", "penalties",
                     "opp_penalties", "stars", "result"]
 
-    game_df = pd.DataFrame([(opponent, home_away, game_date, game_date, caps_goalie, opp_goalie, caps_sog, opp_sog,
+    game_df = pd.DataFrame([(opponent, home_away, game_date, caps_goalie, opp_goalie, caps_sog, opp_sog,
                             caps_fop, opp_fop, caps_ppn, caps_ppp, opp_ppn, opp_ppp, caps_pim, opp_pim, caps_hits,
                             opp_hits, caps_bs, opp_bs, caps_gv, opp_gv, caps_tk, opp_tk, caps_goals, opp_goals,
                             caps_penalties, opp_penalties, stars, result)], columns=game_columns)
@@ -427,6 +427,4 @@ def pull_current_schedule() -> None:
 
 
 if __name__ == '__main__':
-    pull_game_by_date("2024-11-18")
-    d.load_file("to_load/game_2024-11-18.csv", "games",
-                [], "append", "data/stats_2425.db")
+    ...

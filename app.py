@@ -12,6 +12,15 @@ from PyQt6.QtWidgets import (
 
 CAPS_ICON = "assets/caps_icon.ico"
 CURRENT_SEASON = "2425"
+TEAMS_DICT = {
+    "Anaheim Ducks": "ANA", "Boston Bruins": "BOS", "Buffalo Sabres": "BUF", "Calgary Flames": "CGY", "Carolina Hurricanes": "CAR", "Chicago Blackhawks": "CHI",
+    "Colorado Avalanche": "COL", "Columbus Blue Jackets": "CBJ", "Dallas Stars": "DAL", "Detroit Red Wings": "DET", "Edmonton Oilers": "EDM",
+    "Florida Panthers": "FLA", "Los Angeles Kings": "LAK", "Minnesota Wild": "MIN", "Montreal Canadiens": "MTL", "Montréal Canadiens": "MTL",
+    "Nashville Predators": "NSH", "New Jersey Devils": "NJD", "New York Islanders": "NYI", "New York Rangers": "NYR", "Ottawa Senators": "OTT",
+    "Philadelphia Flyers": "PHI", "Pittsburgh Penguins": "PIT", "San Jose Sharks": "SJS", "Seattle Kraken": "SEA", "St. Louis Blues": "STL",
+    "Tampa Bay Lightning": "TBL", "Toronto Maple Leafs": "TOR", "Utah Hockey Club": "UTA", "Vancouver Canucks": "VAN", "Vegas Golden Knights": "VGK",
+    "Washington Capitals": "WSH", "Winnipeg Jets": "WPG"
+}
 
 # Alignments and fonts
 LEFT = Qt.AlignmentFlag.AlignLeft
@@ -717,6 +726,7 @@ class RosterWindow(QWidget):
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
         self.setMinimumSize(610, 650)
+        self.setMaximumSize(900, 900)
 
     def go_back(self) -> None:
         self.hide()
@@ -820,19 +830,313 @@ class GameWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        layout = QHBoxLayout()
+        # Create widgets
+        self.season_list = QComboBox()
+        self.date_list = QComboBox()
+        self.result_text_label = QLabel("Result:")
+        self.result_label = QLabel("Tie")
+        self.wsh_logo = QLabel()
+        self.wsh_logo_pixmap = QPixmap("assets/team_logos/WSH.png")
+        self.wsh_label = QLabel("WSH")
+        self.home_away_label = QLabel("vs.")
+        self.opp_logo = QLabel()
+        self.opp_logo_pixmap = QPixmap("assets/team_logos/NHL.png")
+        self.opp_label = QLabel("OPP")
+        self.score_label = QLabel("Score")
+        self.wsh_score_label = QLabel("0")
+        self.opp_score_label = QLabel("0")
+        self.sog_label = QLabel("SOG")
+        self.fop_label = QLabel("FOW%")
+        self.pp_label = QLabel("Power Play")
+        self.pim_label = QLabel("PIM")
+        self.hits_label = QLabel("Hits")
+        self.bs_label = QLabel("Blocked Shots")
+        self.gv_label = QLabel("Giveaways")
+        self.tk_label = QLabel("Takeaways")
+        self.goalie_label = QLabel("Goaltender")
+        self.goals_label = QLabel("Goals")
+        self.penalties_label = QLabel("Penalties")
+        self.stars_label = QLabel("Stars")
+        self.wsh_sog_label = QLabel("0")
+        self.opp_sog_label = QLabel("0")
+        self.wsh_fop_label = QLabel("0")
+        self.opp_fop_label = QLabel("0")
+        self.wsh_ppp_label = QLabel("0")
+        self.opp_ppp_label = QLabel("0")
+        self.wsh_pp_label = QLabel("0/0")
+        self.opp_pp_label = QLabel("0/0")
+        self.wsh_pim_label = QLabel("0")
+        self.opp_pim_label = QLabel("0")
+        self.wsh_hits_label = QLabel("0")
+        self.opp_hits_label = QLabel("0")
+        self.wsh_bs_label = QLabel("0")
+        self.opp_bs_label = QLabel("0")
+        self.wsh_gv_label = QLabel("0")
+        self.opp_gv_label = QLabel("0")
+        self.wsh_tk_label = QLabel("0")
+        self.opp_tk_label = QLabel("0")
+        self.wsh_goalie_label = QLabel("None")
+        self.opp_goalie_label = QLabel("None")
+        self.wsh_goals_box = QPlainTextEdit("None")
+        self.opp_goals_box = QPlainTextEdit("None")
+        self.wsh_penalties_box = QPlainTextEdit("None")
+        self.opp_penalties_box = QPlainTextEdit("None")
+        self.stars_names_label = QLabel("None")
         self.back_btn = QPushButton("Back")
+        self.vert_spacer = QSpacerItem(
+            20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.horz_spacer = QSpacerItem(
+            20, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        # Widget groups
+        self.headers = [
+            self.wsh_label, self.home_away_label, self.opp_label, self.sog_label, self.fop_label, self.pp_label,
+            self.pim_label, self.hits_label, self.bs_label, self.gv_label, self.tk_label, self.goalie_label,
+            self.goals_label, self.penalties_label, self.stars_label, self.result_text_label
+        ]
+        self.data_labels = [
+            self.wsh_sog_label, self.opp_sog_label, self.wsh_fop_label, self.opp_fop_label, self.wsh_ppp_label,
+            self.opp_ppp_label, self.wsh_pp_label, self.opp_pp_label, self.wsh_pim_label, self.opp_pim_label,
+            self.wsh_hits_label, self.opp_hits_label, self.wsh_bs_label, self.opp_bs_label, self.wsh_tk_label,
+            self.opp_tk_label, self.wsh_gv_label, self.opp_gv_label, self.wsh_goalie_label, self.opp_goalie_label,
+            self.stars_names_label
+        ]
+        self.multilines = [
+            self.wsh_goals_box, self.wsh_penalties_box, self.opp_goals_box, self.opp_penalties_box
+        ]
+        self.btns = [self.back_btn]
+
+        # Configure widgets
+        self.wsh_logo.setPixmap(self.wsh_logo_pixmap.scaledToWidth(100))
+        self.opp_logo.setPixmap(self.opp_logo_pixmap.scaledToWidth(100))
+        self.result_label.setFont(QFont("Segoe UI", 14))
+
+        for lbl in self.headers:
+            lbl.setFont(HEADER_FONT)
+        for lbl in self.data_labels:
+            lbl.setFont(LABEL_FONT)
+        for box in self.multilines:
+            box.setFont(FIELD_FONT)
+            box.setReadOnly(True)
+        for b in self.btns:
+            b.setFont(BTN_FONT)
+            b.setFixedSize(BTN_SIZE)
+
+        self.season_list.currentIndexChanged.connect(self.populate_date_list)
+        self.date_list.currentIndexChanged.connect(self.load_game_from_list)
         self.back_btn.clicked.connect(self.go_back)
-        layout.addWidget(self.back_btn)
+        self.populate_seasons_combobox()
+
+        # Set layout
+        table_row1 = QHBoxLayout()
+        table_row1.addWidget(self.season_list, alignment=CENTER)
+        table_row1.addSpacerItem(self.horz_spacer)
+        table_row1.addWidget(self.result_text_label, alignment=CENTER)
+
+        table_row2 = QHBoxLayout()
+        table_row2.addWidget(self.date_list, alignment=CENTER)
+        table_row2.addSpacerItem(self.horz_spacer)
+        table_row2.addWidget(self.result_label, alignment=CENTER)
+
+        table_row3 = QHBoxLayout()
+        table_row3.addWidget(self.wsh_logo, alignment=CENTER)
+        table_row3.addSpacerItem(QSpacerItem(
+            250, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        table_row3.addWidget(self.opp_logo, alignment=CENTER)
+
+        table_row4 = QHBoxLayout()
+        table_row4.addWidget(self.wsh_label, alignment=CENTER)
+        table_row4.addWidget(self.home_away_label, alignment=CENTER)
+        table_row4.addWidget(self.opp_label, alignment=CENTER)
+
+        table_row5 = QHBoxLayout()
+        table_row5.addWidget(self.wsh_score_label, alignment=CENTER)
+        table_row5.addWidget(self.score_label, alignment=CENTER)
+        table_row5.addWidget(self.opp_score_label, alignment=CENTER)
+
+        table_row6 = QHBoxLayout()
+        table_row6.addWidget(self.wsh_sog_label, alignment=CENTER)
+        table_row6.addWidget(self.sog_label, alignment=CENTER)
+        table_row6.addWidget(self.opp_sog_label, alignment=CENTER)
+
+        table_row7 = QHBoxLayout()
+        table_row7.addWidget(self.wsh_fop_label, alignment=CENTER)
+        table_row7.addWidget(self.fop_label, alignment=CENTER)
+        table_row7.addWidget(self.opp_fop_label, alignment=CENTER)
+
+        table_row8 = QHBoxLayout()
+        table_row8.addWidget(self.wsh_ppp_label, alignment=CENTER)
+        table_row8.addWidget(self.pp_label, alignment=CENTER)
+        table_row8.addWidget(self.opp_ppp_label, alignment=CENTER)
+
+        table_row9 = QHBoxLayout()
+        table_row9.addWidget(self.wsh_pp_label, alignment=CENTER)
+        table_row9.addSpacerItem(QSpacerItem(
+            250, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        table_row9.addWidget(self.opp_pp_label, alignment=CENTER)
+
+        table_row10 = QHBoxLayout()
+        table_row10.addWidget(self.wsh_pim_label, alignment=CENTER)
+        table_row10.addWidget(self.pim_label, alignment=CENTER)
+        table_row10.addWidget(self.opp_pim_label, alignment=CENTER)
+
+        table_row11 = QHBoxLayout()
+        table_row11.addWidget(self.wsh_hits_label, alignment=CENTER)
+        table_row11.addWidget(self.hits_label, alignment=CENTER)
+        table_row11.addWidget(self.opp_hits_label, alignment=CENTER)
+
+        table_row12 = QHBoxLayout()
+        table_row12.addWidget(self.wsh_bs_label, alignment=CENTER)
+        table_row12.addWidget(self.bs_label, alignment=CENTER)
+        table_row12.addWidget(self.opp_bs_label, alignment=CENTER)
+
+        table_row13 = QHBoxLayout()
+        table_row13.addWidget(self.wsh_gv_label, alignment=CENTER)
+        table_row13.addWidget(self.gv_label, alignment=CENTER)
+        table_row13.addWidget(self.opp_gv_label, alignment=CENTER)
+
+        table_row14 = QHBoxLayout()
+        table_row14.addWidget(self.wsh_tk_label, alignment=CENTER)
+        table_row14.addWidget(self.tk_label, alignment=CENTER)
+        table_row14.addWidget(self.opp_tk_label, alignment=CENTER)
+
+        table_row15 = QHBoxLayout()
+        table_row15.addWidget(self.wsh_goalie_label, alignment=CENTER)
+        table_row15.addWidget(self.goalie_label, alignment=CENTER)
+        table_row15.addWidget(self.opp_goalie_label, alignment=CENTER)
+
+        table_row16 = QHBoxLayout()
+        table_row16.addSpacerItem(self.vert_spacer)
+
+        table_row17 = QHBoxLayout()
+        table_row17.addWidget(self.wsh_goals_box, alignment=CENTER)
+        table_row17.addWidget(self.goals_label, alignment=CENTER)
+        table_row17.addWidget(self.opp_goals_box, alignment=CENTER)
+
+        table_row18 = QHBoxLayout()
+        table_row18.addWidget(self.wsh_penalties_box, alignment=CENTER)
+        table_row18.addWidget(self.penalties_label, alignment=CENTER)
+        table_row18.addWidget(self.opp_penalties_box, alignment=CENTER)
+
+        rows = [
+            table_row1, table_row2, table_row3, table_row4, table_row5, table_row6,
+            table_row7, table_row8, table_row9, table_row10, table_row11, table_row12,
+            table_row13, table_row14, table_row15, table_row16, table_row17, table_row18
+        ]
+
+        table_layout = QVBoxLayout()
+        for row in rows:
+            table_layout.addLayout(row)
+
+        stars_layout = QVBoxLayout()
+        stars_layout.addWidget(self.stars_label, alignment=CENTER)
+        stars_layout.addWidget(self.stars_names_label, alignment=CENTER)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(self.back_btn)
+
+        layout = QVBoxLayout()
+        layout.addLayout(table_layout)
+        layout.addSpacerItem(self.vert_spacer)
+        layout.addLayout(stars_layout)
+        layout.addSpacerItem(self.vert_spacer)
+        layout.addLayout(btn_row)
 
         self.setWindowTitle("Washington Capitals Games")
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
+        self.setMinimumSize(750, 950)
 
     def go_back(self) -> None:
         self.hide()
         global w
         w.show()
+
+    def populate_seasons_combobox(self):
+        data_files = os.listdir("data")
+        db_files = [db for db in data_files if db.startswith("stats_")]
+        seasons_raw = [s[s.index("_")+1:s.index(".db")] for s in db_files]
+        seasons_fmt = [f"20{s[:2]}-20{s[2:]}" for s in seasons_raw]
+        self.season_list.addItems(["-Seasons-"] + seasons_fmt)
+        # Add seasons to dict for easier conversion later
+        self.season_dict = {}
+        for i in range(len(db_files)):
+            self.season_dict[seasons_fmt[i]] = db_files[i]
+
+    def populate_date_list(self):
+        self.date_list.clear()
+        curr_season = self.season_list.currentText()
+        if curr_season == "-Seasons-":
+            self.date_list.addItem("Select a season")
+            return
+        games = d.fetch_all("games", f"data/{self.season_dict[curr_season]}")
+        dates = []
+        for game in games:
+            dates.append(game[2])
+        self.date_list.addItems(dates)
+
+    def load_game_from_list(self):
+        try:
+            curr_season = self.season_list.currentText()
+            if curr_season == "-Seasons-":
+                return
+            date = self.date_list.currentText()
+            if date in ("Select a season", None, ""):
+                return
+            game_data = d.fetch_one(
+                "games", "date = '" + date + "'", f"data/{self.season_dict[curr_season]}")
+
+            # Insert data into correct fields
+            opp_name_abbr = TEAMS_DICT[game_data[0]]
+            self.opp_label.setText(opp_name_abbr)
+            self.opp_logo_pixmap = QPixmap(
+                f"assets/team_logos/{opp_name_abbr}.png")
+            self.opp_logo.setPixmap(self.opp_logo_pixmap.scaledToWidth(100))
+            self.home_away_label.setText(
+                "vs." if game_data[1] == "home" else "@")
+            self.wsh_goalie_label.setText(game_data[3])
+            self.opp_goalie_label.setText(game_data[4])
+            self.wsh_sog_label.setText(str(game_data[5]))
+            self.opp_sog_label.setText(str(game_data[6]))
+            self.wsh_fop_label.setText(str(game_data[7]))
+            self.opp_fop_label.setText(str(game_data[8]))
+            self.wsh_pp_label.setText(game_data[9])
+            self.wsh_ppp_label.setText(str(game_data[10]))
+            self.opp_pp_label.setText(game_data[11])
+            self.opp_ppp_label.setText(str(game_data[12]))
+            self.wsh_pim_label.setText(str(game_data[13]))
+            self.opp_pim_label.setText(str(game_data[14]))
+            self.wsh_hits_label.setText(str(game_data[15]))
+            self.opp_hits_label.setText(str(game_data[16]))
+            self.wsh_bs_label.setText(str(game_data[17]))
+            self.opp_bs_label.setText(str(game_data[18]))
+            self.wsh_gv_label.setText(str(game_data[19]))
+            self.opp_gv_label.setText(str(game_data[20]))
+            self.wsh_tk_label.setText(str(game_data[21]))
+            self.opp_tk_label.setText(str(game_data[22]))
+            wsh_goals = game_data[23].replace(
+                "['", "").replace("']", "").split("', '")
+            opp_goals = game_data[24].replace(
+                "['", "").replace("']", "").split("', '")
+            self.wsh_goals_box.setPlainText("\n".join(wsh_goals))
+            self.opp_goals_box.setPlainText("\n".join(opp_goals))
+            wsh_penalties = game_data[25].replace(
+                "['", "").replace("']", "").split("', '")
+            opp_penalties = game_data[26].replace(
+                "['", "").replace("']", "").split("', '")
+            self.wsh_penalties_box.setPlainText("\n".join(wsh_penalties))
+            self.opp_penalties_box.setPlainText("\n".join(opp_penalties))
+            stars = game_data[27].replace(
+                "['", "").replace("']", "").split("', '")
+            self.stars_names_label.setText(
+                f"#1 - {stars[0]}, #2 - {stars[1]}, #3 - {stars[2]}")
+            self.result_label.setText(game_data[28])
+            self.wsh_score_label.setText(
+                "0" if wsh_goals[0] == "None" else str(len(wsh_goals)))
+            self.opp_score_label.setText(
+                "0" if opp_goals[0] == "None" else str(len(opp_goals)))
+        except AttributeError as e:
+            print(e)
 
 
 class ScheduleWindow(QWidget):
