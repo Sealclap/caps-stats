@@ -15,6 +15,23 @@ box_score_api_head: str = "https://api-web.nhle.com/v1/gamecenter/"
 box_score_api_tail: str = "/boxscore"
 
 
+def check_folder(func):
+    """Wrapper function used to check for the `to_load` folder in the directory\n
+    If it does not exist, this function will create it.
+    """
+    def wrap(*args, **kwargs):
+        load_folder = "to_load"
+        to_load_exists = os.path.exists(load_folder)
+        if not to_load_exists:
+            os.mkdir(load_folder)
+
+        result = func(*args, **kwargs)
+
+        return result
+    return wrap
+
+
+@check_folder
 def pull_roster() -> None:
     """Pulls the current Roster from the NHL API and saves to .csv file
     """
@@ -79,6 +96,7 @@ def pull_roster() -> None:
     roster_df.to_csv("to_load/roster_from_api.csv", index=False)
 
 
+@check_folder
 def pull_skaters() -> None:
     """Pulls all Washington Skaters stats from the NHL API and saves to .csv file
     """
@@ -128,6 +146,7 @@ def pull_skaters() -> None:
     skater_df.to_csv("to_load/skaters_from_api.csv", index=False)
 
 
+@check_folder
 def pull_goalies() -> None:
     """Pulls all Washington Goalies stats from the NHL API and saves to .csv file
     """
@@ -175,6 +194,7 @@ def pull_goalies() -> None:
     goalie_df.to_csv("to_load/goalies_from_api.csv", index=False)
 
 
+@check_folder
 def pull_all_player_data() -> None:
     """Pulls goalie, skater, and roster data from the NHL API and saves to .csv files
     """
@@ -183,8 +203,10 @@ def pull_all_player_data() -> None:
     pull_goalies()
 
 
+@check_folder
 def bulk_update(db_path: str) -> None:
-    """Updates all tables using the NHL API except `games` and `seasons`
+    """Updates all tables using the NHL API except `seasons`\n
+    *Note: This is only for use in the `stats_YYYY.db` dbs*
 
     Args:
         db_path (str): path to desired db (ex. 'data/stats_2425.db')
@@ -205,10 +227,18 @@ def bulk_update(db_path: str) -> None:
     games_to_load = [file for file in all_files if file.startswith("game_")]
     for game in games_to_load:
         d.load_file(f"to_load/{game}", "games", [], "append", db_path)
-    delete_game_files()
+
+    for file in all_files:
+        os.remove(f"to_load/{file}")
 
 
+@check_folder
 def pull_game_by_id(game_id: str | int) -> None:
+    """Pulls a single game by NHL API ID
+
+    Args:
+        game_id (str | int): ID of the desired game
+    """
     data = r.get(f"{landing_api_head}{game_id}{landing_api_tail}").json()
 
     if data["awayTeam"]["id"] == 15:
@@ -397,14 +427,26 @@ def pull_game_by_id(game_id: str | int) -> None:
     game_df.to_csv(f"to_load/game_{game_date}.csv", index=False)
 
 
+@check_folder
 def pull_game_by_date(date: str = "now") -> None:
+    """Pulls a game by date for when `game_id` is unknown
+
+    Args:
+        date (str, optional): date in `YYYY-MM-DD` format. Defaults to "now".
+    """
     data = r.get(f"{game_api_head}{date}").json()
     for game in data["games"]:
         if game["awayTeam"]["id"] == 15 or game["homeTeam"]["id"] == 15:
             pull_game_by_id(game["id"])
 
 
+@check_folder
 def pull_all_completed_games(db_path: str = ACTIVE_DB) -> None:
+    """Pulls game data for all games on the schedule up to **but not including** today
+
+    Args:
+        db_path (str, optional): db to query (ex. "data/stats_2425.db"). Defaults to ACTIVE_DB.
+    """
     today = pd.Timestamp.now()
     # Prevents pulling today's game in case it hasn't happened yet
     today_str = f"{today.year}-{today.month}-{today.day}"
@@ -428,15 +470,7 @@ def pull_all_completed_games(db_path: str = ACTIVE_DB) -> None:
         pull_game_by_date(date)
 
 
-def delete_game_files() -> None:
-    all_files = os.listdir("to_load")
-    game_files = [file for file in all_files if file.startswith("game_")]
-    if len(game_files) < 1:
-        return
-    for file in game_files:
-        os.remove(f"to_load/{file}")
-
-
+@check_folder
 def pull_current_schedule() -> None:
     """Pulls the current schedule from the NHL API and saves to .csv file
     """
@@ -469,7 +503,4 @@ def pull_current_schedule() -> None:
 
 
 if __name__ == '__main__':
-    tables = ["games", "skaters", "goalies", "roster", "schedule"]
-    for table in tables:
-        d.drop_table(table, ACTIVE_DB)
-    bulk_update(ACTIVE_DB)
+    ...

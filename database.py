@@ -39,6 +39,9 @@ def connect_to_db(func):
         else:
             change_active_db("data/capitals.db")
 
+        if not os.path.exists("data"):
+            os.mkdir("data")
+
         conn = sq.connect(active_db)
         c = conn.cursor()
         result = func(*args, **kwargs)
