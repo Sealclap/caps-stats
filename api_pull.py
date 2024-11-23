@@ -1,7 +1,9 @@
-import requests as r
+import os
 import pandas as pd
+import requests as r
 import database as d
 
+ACTIVE_DB: str = "data/stats_2425.db"
 roster_api: str = "https://api-web.nhle.com/v1/club-stats/WSH/now"
 player_api_head: str = "https://api-web.nhle.com/v1/player/"
 player_api_tail: str = "/landing"
@@ -189,6 +191,7 @@ def bulk_update(db_path: str) -> None:
     """
     pull_all_player_data()
     pull_current_schedule()
+    pull_all_completed_games()
     d.load_file("to_load/skaters_from_api.csv",
                 "skaters", [], "replace", db_path)
     d.load_file("to_load/goalies_from_api.csv",
@@ -197,6 +200,12 @@ def bulk_update(db_path: str) -> None:
                 [], "replace", db_path)
     d.load_file("to_load/schedule_from_api.csv",
                 "schedule", [], "replace", db_path)
+
+    all_files = os.listdir("to_load")
+    games_to_load = [file for file in all_files if file.startswith("game_")]
+    for game in games_to_load:
+        d.load_file(f"to_load/{game}", "games", [], "append", db_path)
+    delete_game_files()
 
 
 def pull_game_by_id(game_id: str | int) -> None:
@@ -395,6 +404,39 @@ def pull_game_by_date(date: str = "now") -> None:
             pull_game_by_id(game["id"])
 
 
+def pull_all_completed_games(db_path: str = ACTIVE_DB) -> None:
+    today = pd.Timestamp.now()
+    # Prevents pulling today's game in case it hasn't happened yet
+    today_str = f"{today.year}-{today.month}-{today.day}"
+    schedule = d.fetch_all("schedule", db_path)
+    if schedule is None:
+        pull_current_schedule()
+        d.load_file("to_load/schedule_from_api.csv",
+                    "schedule", [], "replace", db_path)
+        schedule = d.fetch_all("schedule", db_path)
+    games = d.fetch_all("games", db_path)
+    all_dates = [g[0] for g in schedule]
+    if games is None:
+        completed_dates = []
+    else:
+        completed_dates = [g[2] for g in games]
+    dates_to_pull = [
+        d for d in all_dates if d not in completed_dates and d < today_str]
+    if len(dates_to_pull) == 0:
+        return
+    for date in dates_to_pull:
+        pull_game_by_date(date)
+
+
+def delete_game_files() -> None:
+    all_files = os.listdir("to_load")
+    game_files = [file for file in all_files if file.startswith("game_")]
+    if len(game_files) < 1:
+        return
+    for file in game_files:
+        os.remove(f"to_load/{file}")
+
+
 def pull_current_schedule() -> None:
     """Pulls the current schedule from the NHL API and saves to .csv file
     """
@@ -427,4 +469,7 @@ def pull_current_schedule() -> None:
 
 
 if __name__ == '__main__':
-    ...
+    tables = ["games", "skaters", "goalies", "roster", "schedule"]
+    for table in tables:
+        d.drop_table(table, ACTIVE_DB)
+    bulk_update(ACTIVE_DB)
