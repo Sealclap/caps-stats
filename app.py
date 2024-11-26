@@ -239,6 +239,7 @@ class SkaterWindow(QWidget):
         for i in inputs:
             i.setFont(FIELD_FONT)
             i.setAlignment(CENTER)
+            i.setMinimumWidth(150)
             i.setReadOnly(True)
 
         for l in lists:
@@ -334,7 +335,7 @@ class SkaterWindow(QWidget):
         self.setWindowTitle("Washington Capitals Skaters")
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
-        self.setFixedSize(910, 320)
+        self.setFixedSize(1150, 320)
 
     def go_back(self) -> None:
         self.hide()
@@ -491,6 +492,7 @@ class GoalieWindow(QWidget):
             i.setFont(FIELD_FONT)
             i.setAlignment(CENTER)
             i.setReadOnly(True)
+            i.setMaximumWidth(150)
 
         for l in lists:
             l.setMaximumWidth(150)
@@ -578,7 +580,7 @@ class GoalieWindow(QWidget):
         self.setWindowTitle("Washington Capitals Goalies")
         self.setWindowIcon(QIcon(CAPS_ICON))
         self.setLayout(layout)
-        self.setFixedSize(1073, 300)
+        self.setFixedSize(1150, 300)
 
     def go_back(self) -> None:
         self.hide()

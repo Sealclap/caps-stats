@@ -1,3 +1,4 @@
+import os
 import requests as r
 import database as d
 
@@ -5,6 +6,10 @@ roster = d.fetch_all("roster", "data/stats_2425.db")
 for p in roster:
     name = p[2].replace(" ", "_").lower() + ".png"
     headshot = p[1]
+
+    files = os.listdir("assets/headshots")
+    if name in files:
+        continue
 
     with open(f"assets/headshots/{name}", 'wb') as handle:
         response = r.get(headshot, stream=True)
