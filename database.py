@@ -68,6 +68,7 @@ def create_table(table_name: str, columns: list[str] | dict[str, str], db_path: 
         bool: `True` if successful else `False`
     """
     try:
+        table_name = table_name.lower()
         if isinstance(columns, dict):
             to_list = [f"{k} {v}" for k, v in columns.items()]
             c.execute(f"CREATE TABLE IF NOT EXISTS {
@@ -94,7 +95,7 @@ def fetch_one(table_name: str, criteria: str, db_path: str = "data/capitals.db")
         db_path (str, optional): `[path]/[filename].db`. Defaults to "data/capitals.db".
 
     Returns:
-        tuple|None: returns a tuple of the row data else if exists else `None`
+        tuple|None: returns a tuple of the row data if exists else `None`
     """
     try:
         table_name = table_name.lower()
@@ -115,16 +116,30 @@ def fetch_many(table_name: str, criteria: str, num_rows: int, db_path: str = "da
         num_rows (int): maximum number of rows to be returned
         db_path (str, optional): `[path]/[filename].db`. Defaults to "data/capitals.db".
 
+    Raises:
+        TypeError: when file type is neither `.xlsx` nor `.csv`
+        ValueError: when `num_rows` < 1
+
     Returns:
         list[tuple]|None: returns a list of row tuples if exist else `None`
     """
     try:
+        if num_rows < 1:
+            raise TypeError("num_rows must be >= 1")
+
+        if not isinstance(num_rows, int):
+            raise ValueError("num_rows must be of type 'int'")
+
         table_name = table_name.lower()
         c.execute(f"SELECT * FROM {table_name} WHERE {criteria}")
         rows = c.fetchmany(num_rows)
         return rows
     except sq.OperationalError as e:
         print(f"ERROR: {e}")
+    except ValueError as e:
+        print(f"ERROR: {e}")
+    except TypeError as e:
+        print(f"ERROR {e}")
 
 
 @connect_to_db
@@ -233,12 +248,12 @@ def update_row(table_name: str, criteria: str, updates: dict[str, str | int | fl
 
 # DELETE functions
 @connect_to_db
-def delete_row(table_name: str, criteria: dict[str, str], db_path: str = "data/capitals.db") -> bool:
+def delete_row(table_name: str, criteria: str, db_path: str = "data/capitals.db") -> bool:
     """Deletes a row from a database table
 
     Args:
         table_name (str): table to be deleted from
-        criteria (dict[str, str]): SQL string for search criteria. may include logic operators (e.g. `col1 = 'yellow'`)
+        criteria (str): SQL string for search criteria. may include logic operators (e.g. `col1 = 'yellow'`)
         db_path (str, optional): `[path]/[filename].db`. Defaults to "data/capitals.db".
 
     Returns:
@@ -246,16 +261,7 @@ def delete_row(table_name: str, criteria: dict[str, str], db_path: str = "data/c
     """
     try:
         table_name = table_name.lower()
-        if "and" not in criteria.keys() and "or" not in criteria.keys():
-            criteria_str = criteria["primary"]
-        elif "and" in criteria.keys() and len(criteria["and"]) >= 1:
-            criteria_str = f"{criteria["primary"]}{
-                " AND ".join(criteria["and"])}"
-        elif "or" in criteria.keys() and len(criteria["or"]) >= 1:
-            criteria_str = f"{criteria["primary"]}{
-                " OR ".join(criteria["and"])}"
-
-        c.execute(f"DELETE FROM {table_name} WHERE {criteria_str}")
+        c.execute(f"DELETE FROM {table_name} WHERE {criteria}")
         conn.commit()
         return True
     except sq.OperationalError as e:
@@ -367,7 +373,7 @@ def load_file(file_to_load: str, table_name: str, drop_columns: list[str], write
         file_to_load (str): file to be loaded (e.g. `to_load/roster.xlsx`)
         table_name (str): table to add data to. will be created if not exists
         drop_columns (list[str]): list of columns to be dropped before table insertion. use empty list (`[]`) if no columns should be dropped
-        write_type (str, optional): _description_. Defaults to "replace".
+        write_type (str, optional): "replace", "append", "fail". Defaults to "replace".
         db_path (str, optional): `[path]/[filename].db`. Defaults to "data/capitals.db".
 
     Raises:

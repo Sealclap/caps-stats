@@ -503,4 +503,4 @@ def pull_current_schedule() -> None:
 
 
 if __name__ == '__main__':
-    ...
+    bulk_update(ACTIVE_DB)
