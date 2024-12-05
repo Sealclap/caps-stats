@@ -1,0 +1,4 @@
+__pycache__/
+*.py
+*$py.class
+test.py
