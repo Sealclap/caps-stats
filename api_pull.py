@@ -347,7 +347,7 @@ def pull_game_by_id(game_id: str | int) -> None:
         away_stats[category] = cat["awayValue"]
 
     opponent = f"{opponent_data["placeName"]["default"]} {
-        opponent_data["name"]["default"]}"
+        opponent_data["commonName"]["default"]}"
     # Used to fix "Utah Utah Hockey Club" error from API
     new_opponent = []
     for word in opponent.split():
@@ -449,7 +449,7 @@ def pull_all_completed_games(db_path: str = ACTIVE_DB) -> None:
     """
     today = pd.Timestamp.now()
     # Prevents pulling today's game in case it hasn't happened yet
-    today_str = f"{today.year}-{today.month}-{today.day}"
+    today_str = f"{today.year}-{today.month}-{today.day:02}"
     schedule = d.fetch_all("schedule", db_path)
     if schedule is None:
         pull_current_schedule()
@@ -463,7 +463,9 @@ def pull_all_completed_games(db_path: str = ACTIVE_DB) -> None:
     else:
         completed_dates = [g[2] for g in games]
     dates_to_pull = [
-        d for d in all_dates if d not in completed_dates and d < today_str]
+        date for date in all_dates if date not in completed_dates and date < today_str]
+    for date in dates_to_pull:
+        print(f"{date=}, {today_str=}, {date < today_str}")
     if len(dates_to_pull) == 0:
         return
     for date in dates_to_pull:
@@ -503,4 +505,4 @@ def pull_current_schedule() -> None:
 
 
 if __name__ == '__main__':
-    bulk_update(ACTIVE_DB)
+    pull_all_completed_games()
