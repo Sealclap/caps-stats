@@ -464,8 +464,6 @@ def pull_all_completed_games(db_path: str = ACTIVE_DB) -> None:
         completed_dates = [g[2] for g in games]
     dates_to_pull = [
         date for date in all_dates if date not in completed_dates and date < today_str]
-    for date in dates_to_pull:
-        print(f"{date=}, {today_str=}, {date < today_str}")
     if len(dates_to_pull) == 0:
         return
     for date in dates_to_pull:
@@ -505,4 +503,4 @@ def pull_current_schedule() -> None:
 
 
 if __name__ == '__main__':
-    pull_all_completed_games()
+    bulk_update("data/stats_2425.db")
